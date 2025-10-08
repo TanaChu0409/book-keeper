@@ -1,0 +1,39 @@
+﻿version: '3.4'
+
+services:
+  bookkeeper.api:
+    image: ${DOCKER_REGISTRY-}bookkeeperapi
+    container_name: bookkeeper.api
+    build:
+      context: .
+      dockerfile: BookKeeper.Api/Dockerfile
+    ports:
+      - 9000:8080
+      - 9001:8081
+    depends_on:
+      - bookkeeper.database
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://bookkeeper.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+
+  bookkeeper.database:
+    image: postgres:17.2
+    container_name: bookkeeper.database
+    environment:
+      POSTGRES_DB: bookkeeper
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./.containers/postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  bookkeeper.aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
+    container_name: bookkeeper.aspire-dashboard
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+    ports:
+      - 18888:18888
+
+
