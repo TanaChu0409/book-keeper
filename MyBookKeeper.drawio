@@ -676,7 +676,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="EbBJYrQ9OM8RAp8NTDZM" name="Endpoints">
-    <mxGraphModel dx="646" dy="579" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="374" dy="336" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" value="Layer" style="locked=1;" parent="0" visible="0" />
@@ -693,8 +693,8 @@
           <mxGeometry x="40" y="720" width="1080" height="50" as="geometry" />
         </mxCell>
         <mxCell id="wdeWMAhkO0R--hoio77T-5" value="Endpoints" style="" parent="0" />
-        <mxCell id="6sRk9-4lkGlFv-R7vLyS-2" value="&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;Expenditure&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;glass=0;" vertex="1" parent="wdeWMAhkO0R--hoio77T-5">
-          <mxGeometry x="40" y="40" width="620" height="470" as="geometry">
+        <mxCell id="6sRk9-4lkGlFv-R7vLyS-2" value="&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;Expenditures&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;glass=0;" vertex="1" parent="wdeWMAhkO0R--hoio77T-5">
+          <mxGeometry x="40" y="40" width="700" height="250" as="geometry">
             <mxRectangle x="40" y="40" width="100" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
@@ -709,6 +709,35 @@
         </mxCell>
         <mxCell id="We6pUWLyvoxdo4bfDyFp-1" value="DeleteExpenditure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;glass=0;" vertex="1" parent="6sRk9-4lkGlFv-R7vLyS-2">
           <mxGeometry x="20" y="190" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-1" value="with label" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="6sRk9-4lkGlFv-R7vLyS-2">
+          <mxGeometry x="220" y="90" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-2" value="with label" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="6sRk9-4lkGlFv-R7vLyS-2">
+          <mxGeometry x="220" y="140" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-3" value="&lt;span style=&quot;text-wrap-mode: nowrap;&quot;&gt;Incomes&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;glass=0;" vertex="1" parent="wdeWMAhkO0R--hoio77T-5">
+          <mxGeometry x="40" y="340" width="700" height="250" as="geometry">
+            <mxRectangle x="40" y="40" width="100" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-4" value="CreateIncome" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;glass=0;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="20" y="90" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-5" value="GetIncomes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;glass=0;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="20" y="40" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-6" value="UpdateIncome" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;glass=0;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="20" y="140" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-7" value="DeleteIncome" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;glass=0;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="20" y="190" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-8" value="with label" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="220" y="90" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3J4iFC-OQAth3441a8oC-9" value="with label" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="3J4iFC-OQAth3441a8oC-3">
+          <mxGeometry x="220" y="140" width="90" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
