@@ -12,6 +12,6 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.15.0.120848" />
-    <PackageVersion Include="Ulid" Version="1.3.4" />
+    <PackageVersion Include="Ulid" Version="1.4.1" />
   </ItemGroup>
 </Project>
