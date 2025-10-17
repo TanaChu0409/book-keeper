@@ -6,7 +6,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.AddApiService()
     .AddErrorHandling()
     .AddDatabase()
-    .AddObservability()
+    .AddObservability() 
     .AddApplicationServices();
 
 WebApplication app = builder.Build();
