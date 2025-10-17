@@ -1,6 +1,10 @@
-﻿using BookKeeper.Api.Middleware;
+﻿using BookKeeper.Api.Database;
+using BookKeeper.Api.Middleware;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -10,7 +14,6 @@ namespace BookKeeper.Api;
 
 public static class DependencyInjection
 {
-
     public static WebApplicationBuilder AddApiService(this WebApplicationBuilder builder)
     {
         builder.Services.AddEndpointsApiExplorer();
@@ -29,6 +32,7 @@ public static class DependencyInjection
 
         return builder;
     }
+
     public static WebApplicationBuilder AddErrorHandling(this WebApplicationBuilder builder)
     {
         builder.Services.AddProblemDetails();
@@ -40,6 +44,14 @@ public static class DependencyInjection
 
     public static WebApplicationBuilder AddDatabase(this WebApplicationBuilder builder)
     {
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options
+                .UseNpgsql(
+                    builder.Configuration.GetConnectionString("Database"),
+                    npgsqlOptions => npgsqlOptions
+                        .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Application))
+                .UseSnakeCaseNamingConvention());
+
         return builder;
     }
 
@@ -49,7 +61,8 @@ public static class DependencyInjection
             .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
             .WithTracing(tracing => tracing
                 .AddHttpClientInstrumentation()
-                .AddAspNetCoreInstrumentation())
+                .AddAspNetCoreInstrumentation()
+                .AddNpgsql())
             .WithMetrics(metrics => metrics
                 .AddHttpClientInstrumentation()
                 .AddAspNetCoreInstrumentation()
@@ -67,7 +80,6 @@ public static class DependencyInjection
 
     public static WebApplicationBuilder AddApplicationServices(this WebApplicationBuilder builder)
     {
-
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddMetrics();

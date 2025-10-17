@@ -10,7 +10,7 @@ public sealed class Label
     public string Name { get; private set; }
     public bool IsDeleted { get; private set; }
     public bool IsIncome { get; private set; }
-    public DateTime CreateOnUtc { get; private set; }
+    public DateTime CreatedOnUtc { get; private set; }
     public DateTime? UpdatedOnUtc { get; private set; }
 
     public static Label Create(
@@ -22,7 +22,7 @@ public sealed class Label
             Name = name,
             IsIncome = isIncome,
             IsDeleted = false,
-            CreateOnUtc = DateTime.UtcNow
+            CreatedOnUtc = DateTime.UtcNow
         };
 
     public void Update(
