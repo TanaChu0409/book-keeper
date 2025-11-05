@@ -1,8 +1,12 @@
-﻿using BookKeeper.Api.Database;
+﻿using System.Reflection;
+using BookKeeper.Api.Clock;
+using BookKeeper.Api.Database;
+using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Middleware;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using OpenTelemetry;
@@ -29,6 +33,10 @@ public static class DependencyInjection
         });
 
         builder.Services.AddResponseCaching();
+        
+        Assembly assembly = typeof(Program).Assembly;
+
+        builder.Services.AddEndpoints(assembly);
 
         return builder;
     }
@@ -84,6 +92,16 @@ public static class DependencyInjection
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddMetrics();
 
+        builder.Services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddMediaR(this WebApplicationBuilder builder)
+    {
+        Assembly assembly = typeof(Program).Assembly;
+        builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(assembly));
+        
         return builder;
     }
 }

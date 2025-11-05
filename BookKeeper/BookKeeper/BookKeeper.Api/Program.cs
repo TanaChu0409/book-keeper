@@ -1,9 +1,11 @@
 ﻿using BookKeeper.Api;
+using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddApiService()
+    .AddMediaR()
     .AddErrorHandling()
     .AddDatabase()
     .AddObservability() 
@@ -22,5 +24,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+
+app.MapEndpoints();
 
 await app.RunAsync();
