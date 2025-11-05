@@ -15,7 +15,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: BookKeeper
+        working-directory: BookKeeper/BookKeeper
 
     steps:
       - uses: actions/checkout@v4
