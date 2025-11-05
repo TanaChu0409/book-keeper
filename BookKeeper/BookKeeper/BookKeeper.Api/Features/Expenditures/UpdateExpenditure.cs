@@ -84,7 +84,7 @@ public static class UpdateExpenditure
             {
                 return Result.Failure<string>(
                     new Error(
-                        "CreateExpenditure.LabelNotFound",
+                        "UpdateExpenditure.LabelNotFound",
                         $"Label with ID '{request.LabelId}' was not found."));
             }
 
