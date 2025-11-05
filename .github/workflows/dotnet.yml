@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  DOTNET_VERSION: "8.x"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: BookKeeper
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore BookKeeper.sln
+
+      - name: Build
+        run: dotnet build BookKeeper.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test BookKeeper.sln --configuration Release --no-restore --no-build
+
+      - name: Publish
+        run: dotnet publish BookKeeper.sln --configuration Release --no-restore --no-build -o buildOutput
+
+      - name: Generate SBOM
+        run: |
+            curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+            chmod +x $RUNNER_TEMP/sbom-tool
+            $RUNNER_TEMP/sbom-tool generate -b ./buildOutput -bc . -pn Test -pv 1.0.0 -ps MyCompany -nsb https://sbom.mycompany.com -V Verbose
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: buildOutput
