@@ -1,6 +1,6 @@
 ﻿namespace BookKeeper.Api.Contracts.Expenditures;
 
-public record CreateExpenditureRequest(
+public sealed record CreateExpenditureRequest(
     string PaymentName,
     decimal Amount,
     DateOnly PaymentDateOnLocal,
