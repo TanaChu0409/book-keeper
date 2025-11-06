@@ -76,6 +76,7 @@ public class DeleteExpenditureEndpoint : IEndpoint
             return result.Match(
                 onSuccess: () => Results.NoContent(),
                 onFailure: (error) => Results.BadRequest(error));
-        });
+        })
+        .WithTags(Tags.Expenditures);
     }
 }

@@ -67,6 +67,7 @@ public class GetExpenditureEndpoint : IEndpoint
             return result.Match(
                 onSuccess: (data) => Results.Ok(data),
                 onFailure: (error) => Results.BadRequest(error));
-        });
+        })
+        .WithTags(Tags.Expenditures);
     }
 }
