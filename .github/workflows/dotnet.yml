@@ -36,6 +36,3 @@ jobs:
 
       - name: Publish
         run: dotnet publish BookKeeper.sln --configuration Release --no-restore --no-build
-        
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
