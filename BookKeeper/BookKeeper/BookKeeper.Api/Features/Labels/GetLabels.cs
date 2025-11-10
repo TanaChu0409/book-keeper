@@ -28,6 +28,7 @@ public static class GetLabels
                 .Labels
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
+                .OrderByDescending(l => l.CreatedOnUtc)
                 .Select(label => new LabelResponse
                 {
                     Id = label.Id,

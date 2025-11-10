@@ -32,6 +32,7 @@ public static class GetExpenditures
                 .Include(e => e.Label)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
+                .OrderByDescending(e => e.CreatedOnUtc)
                 .Select(e => new ExpenditureResponse
                 {
                     Id = e.Id,

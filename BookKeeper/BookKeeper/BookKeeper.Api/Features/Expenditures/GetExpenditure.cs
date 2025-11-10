@@ -56,7 +56,7 @@ public class GetExpenditureEndpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("api/expenditure/{id}", async (string id, ISender sender) =>
+        app.MapGet("api/expenditures/{id}", async (string id, ISender sender) =>
         {
             Result<ExpenditureResponse> result = await sender.Send(
                 new GetExpenditure.Query
