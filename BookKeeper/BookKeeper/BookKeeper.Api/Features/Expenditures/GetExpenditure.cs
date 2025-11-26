@@ -2,6 +2,7 @@
 using BookKeeper.Api.Contracts.Expenditures;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ public static class GetExpenditure
                     Id = expenditure.Id,
                     PaymentName = expenditure.PaymentName,
                     Amount = expenditure.Amount,
-                    PaymentDateOnLocal = expenditure.PaymentDateOnUtc,
+                    PaymentDateOnLocal = expenditure.PaymentDateOnUtc.ToLocalDate(),
                     Label = new ExpenditureResponse.ExpenditureLabelResponse
                     {
                         Id = expenditure.LabelId,

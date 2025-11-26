@@ -8,20 +8,20 @@ using FluentValidation.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookKeeper.Api.Features.Expenditures;
+namespace BookKeeper.Api.Features.Incomes;
 
-public static class DeleteExpenditure
+public static class DeleteIncome
 {
     public class Command : IRequest<Result>
     {
-        public string ExpenditureId { get; set; } = string.Empty;
+        public string IncomeId { get; set; } = string.Empty;
     }
 
     public class Validator : AbstractValidator<Command>
     {
         public Validator()
         {
-            RuleFor(x => x.ExpenditureId).NotEmpty();
+            RuleFor(x => x.IncomeId).NotEmpty();
         }
     }
 
@@ -35,24 +35,25 @@ public static class DeleteExpenditure
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
-                return Result.Failure<string>(
+                return Result.Failure(
                     new Error(
-                        "DeleteExpenditure.Validation",
+                        "DeleteIncome.Validation",
                         validationResult.ToString()));
             }
 
-            Expenditure? expenditure = await dbContext.Expenditures.FirstOrDefaultAsync(
-                x => x.Id == request.ExpenditureId, cancellationToken);
+            Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
+                x => x.Id == request.IncomeId,
+                cancellationToken);
 
-            if (expenditure is null)
+            if (income is null)
             {
                 return Result.Failure(
                     new Error(
-                        "DeleteExpenditure.ExpeditureNotFound",
-                        $"Expenditure with ID '{request.ExpenditureId}' was not found"));
+                        "DeleteIncome.IncomeNotFound",
+                        $"Income with ID '{request.IncomeId}' was not found"));
             }
 
-            dbContext.Expenditures.Remove(expenditure);
+            dbContext.Incomes.Remove(income);
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -61,22 +62,22 @@ public static class DeleteExpenditure
     }
 }
 
-public class DeleteExpenditureEndpoint : IEndpoint
+public class DeleteIncomeEndpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapDelete("api/expenditures/{id}", async (string id, ISender sender) =>
+        app.MapDelete("api/incomes/{id}", async (string id, ISender sender) =>
         {
             Result result = await sender.Send(
-                new DeleteExpenditure.Command
+                new DeleteIncome.Command
                 {
-                    ExpenditureId = id
+                    IncomeId = id
                 });
 
             return result.Match(
                 onSuccess: () => Results.NoContent(),
                 onFailure: (error) => Results.BadRequest(error));
         })
-        .WithTags(Tags.Expenditures);
+        .WithTags(Tags.Incomes);
     }
 }
