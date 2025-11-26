@@ -18,7 +18,7 @@ public static class UpdateExpenditure
         public string ExpenditureId { get; set; } = string.Empty;
         public string PaymentName { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public DateOnly PaymentDateOnLocal { get; set; }
+        public DateOnly PaymentDateOnUtc { get; set; }
         public string LabelId { get; set; } = string.Empty;
     }
 
@@ -31,9 +31,9 @@ public static class UpdateExpenditure
 
             RuleFor(x => x.PaymentName)
                 .NotEmpty()
-                .MaximumLength(100);
+                .MaximumLength(500);
 
-            RuleFor(x => x.PaymentDateOnLocal)
+            RuleFor(x => x.PaymentDateOnUtc)
                .GreaterThan(DateOnly.MinValue);
 
             RuleFor(x => x.Amount)
@@ -41,7 +41,7 @@ public static class UpdateExpenditure
 
             RuleFor(x => x.LabelId)
                 .NotEmpty()
-                .MaximumLength(100);
+                .MaximumLength(500);
         }
     }
 
@@ -91,7 +91,7 @@ public static class UpdateExpenditure
             expenditure.Update(
                 request.PaymentName,
                 request.Amount,
-                request.PaymentDateOnLocal,
+                request.PaymentDateOnUtc,
                 label);
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -116,7 +116,7 @@ public class UpdateExpenditureEndpoint : IEndpoint
                     ExpenditureId = id,
                     PaymentName = request.PaymentName,
                     Amount = request.Amount,
-                    PaymentDateOnLocal = request.PaymentDateOnLocal,
+                    PaymentDateOnUtc = request.PaymentDateOnUtc,
                     LabelId = request.LabelId
                 });
 

@@ -1,5 +1,5 @@
 ﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Expenditures;
+using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
@@ -7,18 +7,17 @@ using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookKeeper.Api.Features.Expenditures;
+namespace BookKeeper.Api.Features.Incomes;
 
-public static class CreateExpenditure
+public static class CreateIncome
 {
     public class Command : IRequest<Result<string>>
     {
-        public string PaymentName { get; set; } = string.Empty;
+        public string IncomeName { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public DateOnly PaymentDateOnUtc { get; set; }
+        public DateOnly IncomeDateOnUtc { get; set; }
         public string LabelId { get; set; } = string.Empty;
     }
 
@@ -26,15 +25,15 @@ public static class CreateExpenditure
     {
         public Validator()
         {
-            RuleFor(x => x.PaymentName)
+            RuleFor(x => x.IncomeName)
                 .NotEmpty()
                 .MaximumLength(500);
 
-            RuleFor(x => x.PaymentDateOnUtc)
-                .GreaterThan(DateOnly.MinValue);
-
             RuleFor(x => x.Amount)
                 .GreaterThan(0);
+
+            RuleFor(x => x.IncomeDateOnUtc)
+                .GreaterThan(DateOnly.MinValue);
 
             RuleFor(x => x.LabelId)
                 .NotEmpty()
@@ -44,61 +43,61 @@ public static class CreateExpenditure
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator) 
+        IValidator<Command> validator)
         : IRequestHandler<Command, Result<string>>
     {
-        public async Task<Result<string>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(
+            Command request,
+            CancellationToken cancellationToken)
         {
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure<string>(
                     new Error(
-                        "CreateExpenditure.Validation",
+                        "CreateIncome.Validation",
                         validationResult.ToString()));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                            x =>
-                                x.Id == request.LabelId &&
-                                !x.IsDeleted,
-                            cancellationToken);
+                x =>
+                    x.Id == request.LabelId &&
+                    x.IsIncome,
+                cancellationToken);
 
             if (label is null)
             {
                 return Result.Failure<string>(
                     new Error(
-                        "CreateExpenditure.LabelNotFound",
+                        "CreateIncome.LabelNotFound",
                         $"Label with ID '{request.LabelId}' was not found."));
             }
 
-            var expenditure = Expenditure.Create(
-                request.PaymentName,
+            var income = Income.Create(
+                request.IncomeName,
                 request.Amount,
-                request.PaymentDateOnUtc,
+                request.IncomeDateOnUtc,
                 label);
 
-            await dbContext.Expenditures.AddAsync(expenditure, cancellationToken);
-
+            await dbContext.Incomes.AddAsync(income, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
-
-            return expenditure.Id;
+            return income.Id;
         }
     }
 }
 
-public class CreateExpenditureEndpoint : IEndpoint
+public class CreateIncomeEndpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapPost("api/expenditures", async (CreateExpenditureRequest request, ISender sender) =>
+        app.MapPost("api/incomes", async (CreateIncomeRequest request, ISender sender) =>
         {
             Result<string> result = await sender.Send(
-                new CreateExpenditure.Command
+                new CreateIncome.Command
                 {
-                    PaymentName = request.PaymentName,
+                    IncomeName = request.IncomeName,
                     Amount = request.Amount,
-                    PaymentDateOnUtc = request.PaymentDateOnUtc,
+                    IncomeDateOnUtc = request.IncomeDateOnUtc,
                     LabelId = request.LabelId
                 });
 
@@ -106,6 +105,6 @@ public class CreateExpenditureEndpoint : IEndpoint
                 onSuccess: (value) => Results.Ok(value),
                 onFailure: (error) => Results.BadRequest(error));
         })
-        .WithTags(Tags.Expenditures);
+        .WithTags(Tags.Incomes);
     }
 }

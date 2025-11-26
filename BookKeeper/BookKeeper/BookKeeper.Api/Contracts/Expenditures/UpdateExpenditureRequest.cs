@@ -3,5 +3,5 @@
 public sealed record UpdateExpenditureRequest(
     string PaymentName,
     decimal Amount,
-    DateOnly PaymentDateOnLocal,
+    DateOnly PaymentDateOnUtc,
     string LabelId);
