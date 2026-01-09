@@ -13,6 +13,7 @@ internal sealed class ExpenditureConfiguration : IEntityTypeConfiguration<Expend
         builder.Property(e => e.Id).HasMaxLength(500);
         builder.Property(e => e.PaymentName).HasMaxLength(500);
         builder.Property(e => e.LabelId).HasMaxLength(500);
+        builder.Property(e => e.UserId).HasMaxLength(500);
         builder.Property(e => e.Amount).HasPrecision(18, 0);
 
         builder.HasOne(e => e.Label)

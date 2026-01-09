@@ -6,6 +6,7 @@ using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
 using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -21,15 +22,25 @@ public static class GetExpenditures
         public int PageSize { get; set; } = 10;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<PaginationResult<ExpenditureResponse>>>
     {
         public async Task<Result<PaginationResult<ExpenditureResponse>>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<PaginationResult<ExpenditureResponse>>(
+                    new Error(
+                        "GetExpenditures.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             List<ExpenditureResponse> expenditureQuery = await dbContext
                 .Expenditures
+                .Where(e => e.UserId == userId)
                 .Include(e => e.Label)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)

@@ -12,5 +12,6 @@ internal sealed class LabelConfiguration : IEntityTypeConfiguration<Label>
 
         builder.Property(l => l.Id).HasMaxLength(500);
         builder.Property(l => l.Name).HasMaxLength(500);
+        builder.Property(l => l.UserId).HasMaxLength(500);
     }
 }

@@ -3,6 +3,7 @@ using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,17 +17,27 @@ public static class GetIncome
         public string Id { get; set; }
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<IncomeResponse>>
     {
         public async Task<Result<IncomeResponse>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<IncomeResponse>(
+                    new Error(
+                        "GetIncome.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             IncomeResponse? incomeResponse = await dbContext
                 .Incomes
                 .AsNoTracking()
-                .Where(i => i.Id == request.Id)
+                .Where(i => i.Id == request.Id &&
+                            i.UserId == userId)
                 .Include(i => i.Label)
                 .Select(i => new IncomeResponse
                 {

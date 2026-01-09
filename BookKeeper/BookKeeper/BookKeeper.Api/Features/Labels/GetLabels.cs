@@ -3,6 +3,7 @@ using BookKeeper.Api.Contracts.Common;
 using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +18,25 @@ public static class GetLabels
         public int PageSize { get; set; } = 10;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<PaginationResult<LabelResponse>>>
     {
         public async Task<Result<PaginationResult<LabelResponse>>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<PaginationResult<LabelResponse>>(
+                    new Error(
+                        "GetLabels.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             List<LabelResponse> labelQuery = await dbContext
                 .Labels
+                .Where(l => l.UserId == userId)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .OrderByDescending(l => l.CreatedOnUtc)

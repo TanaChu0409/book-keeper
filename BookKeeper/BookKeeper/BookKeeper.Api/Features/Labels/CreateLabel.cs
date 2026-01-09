@@ -3,6 +3,7 @@ using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -30,11 +31,21 @@ public static class CreateLabel
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result<string>>
     {
         public async Task<Result<string>> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<string>(
+                    new Error(
+                        "CreateLabel.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
@@ -44,7 +55,7 @@ public static class CreateLabel
                         validationResult.ToString()));
             }
 
-            var label = Label.Create(request.Name, request.IsIncome);
+            var label = Label.Create(request.Name, request.IsIncome, userId);
 
             await dbContext.Labels.AddAsync(label, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);

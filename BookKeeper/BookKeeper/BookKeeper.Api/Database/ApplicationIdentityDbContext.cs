@@ -1,29 +1,28 @@
 ﻿using BookKeeper.Api.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookKeeper.Api.Database;
 
 public sealed class ApplicationIdentityDbContext(DbContextOptions<ApplicationIdentityDbContext> options)
-    : DbContext(options)
+    : IdentityDbContext(options)
 {
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(builder);
 
-        modelBuilder.HasDefaultSchema(Schemas.Application);
-
-        modelBuilder.Entity<IdentityUser>().ToTable("asp_net_users");
-        modelBuilder.Entity<IdentityRole>().ToTable("asp_net_roles");
-        modelBuilder.Entity<IdentityUserRole<string>>().ToTable("asp_net_user_roles");
-        modelBuilder.Entity<IdentityRoleClaim<string>>().ToTable("asp_net_role_claims");
-        modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("asp_net_user_claims");
-        modelBuilder.Entity<IdentityUserLogin<string>>().ToTable("asp_net_user_logins");
-        modelBuilder.Entity<IdentityUserToken<string>>().ToTable("asp_net_user_tokens");
-
-        modelBuilder.Entity<RefreshToken>(entity =>
+        builder.HasDefaultSchema(Schemas.Application);
+        builder.Entity<IdentityUser>().ToTable("asp_net_users");
+        builder.Entity<IdentityRole>().ToTable("asp_net_roles");
+        builder.Entity<IdentityUserRole<string>>().ToTable("asp_net_user_roles");
+        builder.Entity<IdentityRoleClaim<string>>().ToTable("asp_net_role_claims");
+        builder.Entity<IdentityUserClaim<string>>().ToTable("asp_net_user_claims");
+        builder.Entity<IdentityUserLogin<string>>().ToTable("asp_net_user_logins");
+        builder.Entity<IdentityUserToken<string>>().ToTable("asp_net_user_tokens");
+        builder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id);
 

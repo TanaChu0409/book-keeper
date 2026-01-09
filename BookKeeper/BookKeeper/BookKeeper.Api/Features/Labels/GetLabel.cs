@@ -2,6 +2,7 @@
 using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,15 +16,25 @@ public static class GetLabel
         public string Id { get; set; }
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<LabelResponse>>
     {
         public async Task<Result<LabelResponse>> Handle(Query request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<LabelResponse>(
+                    new Error(
+                        "GetLabel.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             LabelResponse? labelResponse = await dbContext
                 .Labels
                 .AsNoTracking()
-                .Where(l => l.Id == request.Id)
+                .Where(l => l.Id == request.Id &&
+                            l.UserId == userId)
                 .Select(l => new LabelResponse
                 {
                     Id = l.Id,

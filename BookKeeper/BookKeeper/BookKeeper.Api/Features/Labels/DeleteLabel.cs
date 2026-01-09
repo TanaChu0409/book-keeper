@@ -2,6 +2,7 @@
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,13 +16,23 @@ public static class DeleteLabel
         public string Id { get; set; } = string.Empty;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "DeleteLabel.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                l => l.Id == request.Id,
+                l => l.Id == request.Id &&
+                     l.UserId == userId,
                 cancellationToken);
             if (label is null)
             {

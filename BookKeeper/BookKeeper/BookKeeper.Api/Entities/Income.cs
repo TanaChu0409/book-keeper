@@ -11,6 +11,7 @@ public sealed class Income
     public decimal Amount { get; private set; }
     public string LabelId { get; private set; }
     public Label Label { get; private set; }
+    public string UserId { get; private set; }
     public DateOnly IncomeDateOnUtc { get; private set; }
     public DateTime CreatedOnUtc { get; private set; }
     public DateTime? UpdatedOnUtc { get; private set; }
@@ -19,7 +20,8 @@ public sealed class Income
         string incomeName,
         decimal amount,
         DateOnly incomeDateOnUtc,
-        Label label) =>
+        Label label,
+        string userId) =>
         new()
         {
             Id = $"i_{Ulid.NewUlid()}",
@@ -28,6 +30,7 @@ public sealed class Income
             IncomeDateOnUtc = incomeDateOnUtc,
             Label = label,
             LabelId = label.Id,
+            UserId = userId,
             CreatedOnUtc = DateTime.UtcNow
         };
 

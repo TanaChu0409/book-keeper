@@ -4,6 +4,7 @@ using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,15 +19,25 @@ public static class GetIncomes
         public int PageSize { get; set; } = 10;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<PaginationResult<IncomeResponse>>>
     {
         public async Task<Result<PaginationResult<IncomeResponse>>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<PaginationResult<IncomeResponse>>(
+                    new Error(
+                        "GetIncomes.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             List<IncomeResponse> incomeQuery = await dbContext
                 .Incomes
+                .Where(i => i.UserId == userId)
                 .Include(i => i.Label)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)

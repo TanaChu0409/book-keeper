@@ -3,6 +3,7 @@ using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -43,13 +44,23 @@ public static class CreateIncome
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result<string>>
     {
         public async Task<Result<string>> Handle(
             Command request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<string>(
+                    new Error(
+                        "CreateIncome.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
@@ -62,7 +73,8 @@ public static class CreateIncome
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
                 x =>
                     x.Id == request.LabelId &&
-                    x.IsIncome,
+                    x.IsIncome &&
+                    x.UserId == userId,
                 cancellationToken);
 
             if (label is null)
@@ -77,7 +89,8 @@ public static class CreateIncome
                 request.IncomeName,
                 request.Amount,
                 request.IncomeDateOnUtc,
-                label);
+                label,
+                userId);
 
             await dbContext.Incomes.AddAsync(income, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);

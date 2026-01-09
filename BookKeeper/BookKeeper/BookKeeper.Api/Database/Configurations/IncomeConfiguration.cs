@@ -13,6 +13,7 @@ internal sealed class IncomeConfiguration : IEntityTypeConfiguration<Income>
         builder.Property(i => i.Id).HasMaxLength(500);
         builder.Property(i => i.IncomeName).HasMaxLength(500);
         builder.Property(i => i.LabelId).HasMaxLength(500);
+        builder.Property(i => i.UserId).HasMaxLength(500);
         builder.Property(i => i.Amount).HasPrecision(18, 0);
         
         builder.HasOne(i => i.Label)

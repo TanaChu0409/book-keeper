@@ -2,6 +2,7 @@
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -27,11 +28,21 @@ public static class DeleteExpenditure
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<string>(
+                    new Error(
+                        "DeleteExpenditure.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
@@ -42,7 +53,9 @@ public static class DeleteExpenditure
             }
 
             Expenditure? expenditure = await dbContext.Expenditures.FirstOrDefaultAsync(
-                x => x.Id == request.ExpenditureId, cancellationToken);
+                x => x.Id == request.ExpenditureId && 
+                     x.UserId == userId, 
+                cancellationToken);
 
             if (expenditure is null)
             {

@@ -4,6 +4,7 @@ using BookKeeper.Api.Clock;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Middleware;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Settings;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -106,6 +107,11 @@ public static class DependencyInjection
         builder.Services.AddMetrics();
 
         builder.Services.TryAddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+        builder.Services.AddTransient<TokenProvider>();
+        builder.Services.AddMemoryCache();
+
+        builder.Services.AddScoped<UserContext>();
 
         return builder;
     }

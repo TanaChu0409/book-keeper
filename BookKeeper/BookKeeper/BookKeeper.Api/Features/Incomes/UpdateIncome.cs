@@ -3,6 +3,7 @@ using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -47,13 +48,23 @@ public static class UpdateIncome
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(
             Command request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "UpdateIncome.Unauthorized",
+                        "User is not authenticated."));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
@@ -64,7 +75,8 @@ public static class UpdateIncome
             }
 
             Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
-                x => x.Id == request.IncomeId,
+                x => x.Id == request.IncomeId &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (income is null)
@@ -76,16 +88,16 @@ public static class UpdateIncome
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                x =>
-                    x.Id == request.LabelId &&
-                    !x.IsDeleted,
+                x => x.Id == request.LabelId &&
+                     !x.IsDeleted &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (label is null)
             {
                 return Result.Failure<string>(
                     new Error(
-                        "UpdateExpenditure.LabelNotFound",
+                        "UpdateIncome.LabelNotFound",
                         $"Label with ID '{request.LabelId}' was not found."));
             }
 
