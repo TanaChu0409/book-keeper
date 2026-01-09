@@ -1,49 +1,84 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.0.0 | **最後更新**: 2026-01-06 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.1.0 | **最後更新**: 2026-01-08 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
 ## 📖 相關文檔
 
-- **Copilot 入門指南**: [.github/copilot-instructions.md](../.github/copilot-instructions.md)
-- **快速參考**: [QUICK-REFERENCE.md](./QUICK-REFERENCE.md)
-- **服務記憶**: [copilot-service-memory.md](./copilot-service-memory.md)
-- **工作流程**: [procedures/](./procedures/)
+| 文檔 | 用途 | 說明 |
+|------|------|------|
+| [copilot-instructions.md](../.github/copilot-instructions.md) | Copilot 主配置 | GitHub Copilot 工作流程與指引 |
+| [QUICK-REFERENCE.md](./QUICK-REFERENCE.md) | 快速參考 | 命名約定、常見任務速查表 |
+| [copilot-service-memory.md](./copilot-service-memory.md) | 服務清單 | Features/Endpoints/Handlers 映射 |
+| [WORKFLOW_ROUTES.md](./procedures/WORKFLOW_ROUTES.md) | 流程判斷 | 任務複雜度判斷與角色路由 |
+| [WORKFLOW_CHECKLIST.md](./procedures/WORKFLOW_CHECKLIST.md) | 檢查清單 | 各階段驗證標準與前置檢查 |
+| [WORKFLOW_HANDOFF.md](./procedures/WORKFLOW_HANDOFF.md) | 交接驗證 | 角色間 Handoff 檢查點 |
+| [REQUIREMENT_TEMPLATE.md](./procedures/REQUIREMENT_TEMPLATE.md) | 需求模板 | 標準需求提交格式 |
+| [FEATURE_TEMPLATE.md](./procedures/FEATURE_TEMPLATE.md) | 功能模板 | 新功能開發標準流程 |
 
 ---
 
 ## 🎯 專案概述
 
-**BookKeeper** 是一個個人財務追蹤 API，採用現代 .NET 8 架構模式：
+**BookKeeper** 是一個使用 .NET 8 構建的現代化個人記帳後端 API，採用 **Vertical Slice Architecture** 與 **CQRS** 模式，專注於管理收入 (Incomes)、支出 (Expenditures) 與標籤 (Labels)。專案採用 PostgreSQL 作為資料存儲、MediatR 處理業務邏輯、FluentValidation 進行請求驗證，並完整整合 OpenTelemetry 實現可觀測性。架構設計清晰、高內聚低耦合，適合個人財務管理場景。
 
-- **架構**: Vertical Slice Architecture (VSA)
-- **API 風格**: ASP.NET Core Minimal API
-- **資料庫**: PostgreSQL 17.2 + Entity Framework Core 8
-- **模式**: CQRS (MediatR) + Result Pattern
-- **容器化**: Docker Compose (API + DB + Aspire Dashboard)
-- **可觀測性**: OpenTelemetry (Traces/Metrics/Logs)
+### 技術棧核心
+
+| 類別 | 技術 | 版本 | 用途 |
+|------|------|------|------|
+| **運行時** | .NET | 8.0 | ASP.NET Core Web API |
+| **ORM** | Entity Framework Core | 8.0.21 | 資料存取層 |
+| **資料庫** | PostgreSQL | 17.2 | 關聯式資料庫 |
+| **資料庫驅動** | Npgsql | 8.0.11 | PostgreSQL 提供者 |
+| **CQRS** | MediatR | 12.5.0 | Command/Query 分離 |
+| **驗證** | FluentValidation | 12.0.0 | 請求驗證 |
+| **可觀測性** | OpenTelemetry | 1.13.1 | Traces/Metrics/Logs |
+| **ID 生成** | Ulid | 1.4.1 | 分散式 ID (`l_`/`i_`/`e_` 前綴) |
+| **API 文檔** | Swashbuckle | 9.0.6 | Swagger/OpenAPI |
+| **認證** | ASP.NET Identity | 8.0.21 | JWT 認證（已配置） |
+
+### 架構特點
+
+1. **Vertical Slice Architecture (VSA)** - 按功能垂直切分，每個 Feature 包含 Command/Query、Validator、Handler、Endpoint
+2. **CQRS Pattern** - 使用 MediatR 實現 Command/Query 職責分離
+3. **Result Pattern** - 函數式錯誤處理，避免異常作為流程控制
+4. **Rich Domain Model** - 實體封裝業務邏輯，私有建構函式 + 靜態工廠方法
+5. **Minimal API + IEndpoint** - 自動探索註冊端點，減少樣板代碼
 
 ### 核心功能領域
 
-1. **Labels（標籤）**: 收入/支出分類管理
-2. **Expenditures（支出）**: 支出記錄追蹤
-3. **Incomes（收入）**: 收入記錄追蹤
+| 模組 | 實體 | ID 前綴 | 功能 |
+|------|------|---------|------|
+| **Labels** | `Label` | `l_` | 收入/支出分類標籤管理 (CRUD + 軟刪除) |
+| **Incomes** | `Income` | `i_` | 收入記錄追蹤 (CRUD + 分頁查詢) |
+| **Expenditures** | `Expenditure` | `e_` | 支出記錄追蹤 (CRUD + 分頁查詢) |
 
 ---
 
 ## 🏗️ 架構決策日誌
 
+### 日誌規則
+
+- **日期格式**: YYYY-MM-DD
+- **ID**: 遞增編號 (#001, #002...)
+- **決策內容**: 30-50 字簡潔描述
+- **理由**: 100+ 字充分說明背景與考量
+- **影響範圍**: 列出受影響的模組/檔案
+
+### 決策記錄
+
 | 日期 | ID | 決策 | 理由 | 影響範圍 |
 |------|----|----|------|---------|
-| 2026-01-06 | #001 | 採用 Vertical Slice Architecture | 功能隔離、易於導航、減少跨層耦合 | 全專案結構 |
-| 2026-01-06 | #002 | Result Pattern 取代 Exception | 明確錯誤處理、更好的控制流 | 所有 Handler |
-| 2026-01-06 | #003 | ULID 作為主鍵 | 時間排序、URL 安全、優於 GUID | 所有 Entity |
-| 2026-01-06 | #004 | 自動端點發現 | 減少樣板代碼、基於約定 | DependencyInjection |
-| 2026-01-06 | #005 | Entity Factory Pattern | 封裝創建邏輯、確保不變性 | 所有 Entity |
-| 2026-01-06 | #006 | MediatR for CQRS | 命令/查詢分離、解耦處理邏輯 | 所有 Feature |
-| 2026-01-06 | #007 | FluentValidation | 聲明式驗證、與 MediatR 整合 | 所有 Command |
-| 2026-01-06 | #008 | Snake_case 資料庫命名 | PostgreSQL 慣例、可讀性 | EF Core 配置 |
+| 2026-01-06 | #001 | 採用 Vertical Slice Architecture | 功能隔離、易於導航、減少跨層耦合、符合現代 .NET 最佳實踐 | 全專案結構 `/Features/` |
+| 2026-01-06 | #002 | Result Pattern 取代 Exception | 明確錯誤處理、更好的控制流、強制調用方處理錯誤 | `/Shared/Result.cs` + 所有 Handler |
+| 2026-01-06 | #003 | ULID 作為主鍵 | 時間排序、URL 安全、分散式友好、優於 GUID | 所有 Entity + `l_`/`i_`/`e_` 前綴 |
+| 2026-01-06 | #004 | 自動端點發現機制 | 減少樣板代碼、基於 `IEndpoint` 約定、Reflection 自動註冊 | `DependencyInjection.cs` |
+| 2026-01-06 | #005 | Entity Factory Pattern | 封裝創建邏輯、確保不變性、私有建構函式 | 所有 Entity (`Label`/`Income`/`Expenditure`) |
+| 2026-01-06 | #006 | MediatR for CQRS | 命令/查詢分離、解耦處理邏輯、單一職責原則 | 所有 Feature Handlers |
+| 2026-01-06 | #007 | FluentValidation 整合 | 聲明式驗證、與 MediatR Pipeline 整合、清晰的驗證規則 | 所有 Command Validators |
+| 2026-01-06 | #008 | Snake_case 資料庫命名 | PostgreSQL 慣例、可讀性、自動轉換 | `EFCore.NamingConventions` 套件 |
+| 2026-01-08 | #009 | 重建 my-ai-swarm 記憶系統 | 符合 copilot-instructions.md 標準、建立決策追蹤機制、支援 Workflow 協作 | `my-ai-swarm/` 全目錄結構
 
 ---
 
@@ -469,10 +504,99 @@ SELECT * FROM expenditures;
 
 | 檔案 | 用途 | 何時修改 |
 |------|------|---------|
-| `Program.cs` | 應用程式啟動、管線配置 | 極少（僅管線變更） |
-| `DependencyInjection.cs` | 服務註冊、端點掃描 | 新增基礎設施服務時 |
-| `ApplicationDbContext.cs` | EF Core 配置、DbSet 定義 | 新增 Entity 時 |
-| `Tags.cs` | Swagger 標籤定義 | 新增領域時 |
+| [Program.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Program.cs) | 應用程式啟動、管線配置 | 極少（僅管線變更） |
+| [DependencyInjection.cs](../BookKeeper/BookKeeper/BookKeeper.Api/DependencyInjection.cs) | 服務註冊、端點掃描 | 新增基礎設施服務時 |
+| [ApplicationDbContext.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Database/ApplicationDbContext.cs) | EF Core 配置、DbSet 定義 | 新增 Entity 時 |
+| [Tags.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Tags.cs) | Swagger 標籤定義 | 新增領域時 |
+| [Result.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Shared/Result.cs) | Result Pattern 核心實現 | 不修改 |
+| [IEndpoint.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Endpoints/IEndpoint.cs) | 端點介面定義 | 不修改 |
+
+---
+
+## 🎯 工作流程適配 (BookKeeper 專屬)
+
+### 複雜度判斷標準
+
+根據 [WORKFLOW_ROUTES.md](./procedures/WORKFLOW_ROUTES.md) 的流程判斷，BookKeeper 專案的標準：
+
+| 任務類型 | 行數估算 | 涉及檔案 | 推薦流程 | 預計工時 |
+|---------|---------|---------|---------|---------|
+| **新增簡單 CRUD Feature** | 100-300 | 1-2 個 Feature 檔案 | **流程 B** | 3-5 天 |
+| **新增複雜業務邏輯 Feature** | 300-500 | 3-5 個 Feature 檔案 + Entity | **流程 A** | 1-2 週 |
+| **新增 Entity + Complete CRUD** | 500+ | Entity + Config + 5 Feature 檔案 | **流程 A** | 1-2 週 |
+| **Bug 修復（單一 Feature）** | <100 | 1 個檔案 | **流程 C** | 1-2 天 |
+| **重構既有 Feature** | 200-400 | 2-3 個檔案 | **流程 B** | 3-5 天 |
+| **資料庫 Schema 變更** | 依複雜度 | Migration + Config | **流程 A/B** | 3-7 天 |
+| **新增認證端點** | 300-500 | JWT Service + Auth Feature | **流程 A** | 1-2 週 |
+
+### BookKeeper 專屬流程示例
+
+#### ✅ 流程 C 示例：修復驗證錯誤
+```markdown
+需求：修復 CreateExpenditure 的金額驗證（允許 0.01）
+分類：Bug 修復
+影響：Features/Expenditures/CreateExpenditure.cs (1 個檔案)
+流程：Developer → QA → Memory
+工時：4-8 小時
+```
+
+#### ✅ 流程 B 示例：新增查詢端點
+```markdown
+需求：為 Expenditure 新增「按月份統計」查詢端點
+分類：新功能（中等）
+影響：Features/Expenditures/GetExpendituresByMonth.cs (1 個新檔案)
+流程：Architect → Developer → QA → Memory
+工時：3-5 天
+```
+
+#### ✅ 流程 A 示例：新增 Category Entity
+```markdown
+需求：新增 Category 實體與完整 CRUD 端點
+分類：新功能（複雜）
+影響：
+  - Entities/Category.cs
+  - Database/Configurations/CategoryConfiguration.cs
+  - ApplicationDbContext.cs
+  - Features/Categories/ (5 個 Feature 檔案)
+  - Contracts/Categories/ (Request/Response)
+流程：Architect → Impact Validator → Developer → QA → Memory
+工時：1-2 週
+```
+
+---
+
+## 🔗 相關資源
+
+### 官方文檔
+- [.NET 8 文檔](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8)
+- [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/)
+- [MediatR](https://github.com/jbogard/MediatR/wiki)
+- [FluentValidation](https://docs.fluentvalidation.net/en/latest/)
+- [OpenTelemetry .NET](https://opentelemetry.io/docs/instrumentation/net/)
+
+### 架構參考
+- [Vertical Slice Architecture](https://www.jimmybogard.com/vertical-slice-architecture/)
+- [Result Pattern in C#](https://enterprisecraftsmanship.com/posts/functional-c-handling-failures-input-errors/)
+- [CQRS Pattern](https://martinfowler.com/bliki/CQRS.html)
+
+### 社群資源
+- [.NET Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/)
+- [Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis)
+
+---
+
+## 📝 版本歷史
+
+| 版本 | 日期 | 變更摘要 | 負責人 |
+|------|------|---------|--------|
+| v1.0.0 | 2026-01-06 | 初始版本建立，記錄核心架構決策 | AI Architect |
+| v1.1.0 | 2026-01-08 | 重建記憶系統，符合 copilot-instructions.md 標準，新增完整命名約定與檢查清單 | GitHub Copilot |
+
+---
+
+**最後更新**: 2026-01-08  
+**維護者**: GitHub Copilot + AI Swarm Agents  
+**專案狀態**: ✅ Active Development
 | `IEndpoint.cs` | 端點約定介面 | 幾乎不修改 |
 | `Result.cs` | 錯誤處理模式 | 幾乎不修改 |
 

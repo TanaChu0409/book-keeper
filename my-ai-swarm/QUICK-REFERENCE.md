@@ -1,10 +1,6 @@
-# BookKeeper Quick Reference
+# BookKeeper - Quick Reference (快速參考指南)
 
-> **目的**: 為 AI Agent 提供快速查閱的決策樹與常用操作指南
->
-> **專案**: BookKeeper Personal Finance API
->
-> **最後更新**: 2026-01-06
+> **版本**: v1.1.0 | **最後更新**: 2026-01-08 | **用途**: AI Agent 與開發者的快速查閱指南
 
 ---
 
@@ -14,21 +10,22 @@
 收到新需求
     ↓
 【第 1 步】需求分類
-    ├─ 新增 CRUD 功能？ → 使用 FEATURE_TEMPLATE.md
-    ├─ 修改既有功能？ → 評估影響範圍
-    ├─ Bug 修復？ → 直接修復 + 更新測試
-    └─ 架構變更？ → 啟動 Architect Review
+    ├─ 新增 CRUD 功能？ → 使用 FEATURE_TEMPLATE.md（流程 B）
+    ├─ 新增 Entity + CRUD？ → 使用 FEATURE_TEMPLATE.md（流程 A）
+    ├─ 修改既有功能？ → 評估影響範圍（流程 B/C）
+    ├─ Bug 修復？ → 直接修復（流程 C）
+    └─ 架構變更？ → 啟動 Architect Review（流程 A）
 
 【第 2 步】複雜度評估
-    ├─ 新增 Entity？ → 需要 Migration（預估 +2h）
-    ├─ 修改 Entity？ → 需要 Migration（預估 +1h）
-    ├─ 僅業務邏輯？ → 快速實裝（預估 1-2h）
-    └─ 跨 Domain？ → 需要評估相依性（預估 +3h）
+    ├─ 新增 Entity？ → 需要 Migration + Config（預估 1-2 週，流程 A）
+    ├─ 修改 Entity？ → 需要 Migration（預估 3-5 天，流程 B）
+    ├─ 僅業務邏輯？ → 快速實裝（預估 1-2 天，流程 C）
+    └─ 跨 Domain？ → 需要評估相依性（預估 1-2 週，流程 A）
 
 【第 3 步】工作流程選擇
-    ├─ 複雜度高？ → 流程 A（Architect → Impact → Developer → QA）
-    ├─ 複雜度中？ → 流程 B（Architect → Developer → QA）
-    └─ 複雜度低？ → 流程 C（Developer → QA）
+    ├─ 複雜度高（>500 行或新 Entity）？ → 流程 A（Architect → Impact → Developer → QA → Memory）
+    ├─ 複雜度中（200-500 行）？ → 流程 B（Architect → Developer → QA → Memory）
+    └─ 複雜度低（<100 行或 Bug）？ → 流程 C（Developer → QA → Memory）
 ```
 
 ---
@@ -45,12 +42,12 @@ docker-compose up --build
 # 僅 API（需外部 DB）
 dotnet run --project BookKeeper/BookKeeper/BookKeeper.Api
 
-# 查看 Swagger
-# http://localhost:9000/swagger
-
-# 查看 Aspire Dashboard（OpenTelemetry）
-# http://localhost:18888
+# 查看服務
+# - Swagger: http://localhost:9000/swagger
+# - Aspire Dashboard: http://localhost:18888
+# - PostgreSQL: localhost:5432
 ```
+
 
 ### **資料庫操作**
 
@@ -58,7 +55,7 @@ dotnet run --project BookKeeper/BookKeeper/BookKeeper.Api
 # 新增 Migration
 dotnet ef migrations add {Name} -p BookKeeper/BookKeeper/BookKeeper.Api
 
-# 套用 Migration
+# 套用 Migration（Development 自動套用）
 dotnet ef database update -p BookKeeper/BookKeeper/BookKeeper.Api
 
 # 查看 Migration 清單
@@ -71,82 +68,258 @@ dotnet ef migrations remove -p BookKeeper/BookKeeper/BookKeeper.Api
 docker exec -it bookkeeper.database psql -U postgres -d bookkeeper
 ```
 
-### **程式碼品質**
+---
 
-```bash
-# 建置（含 Code Analysis）
-dotnet build BookKeeper/BookKeeper/BookKeeper.sln
+## 📐 命名約定速查表
 
-# 清理
-dotnet clean BookKeeper/BookKeeper/BookKeeper.sln
-
-# 格式化
-dotnet format BookKeeper/BookKeeper/BookKeeper.sln
-
-# 查看警告（應該為 0）
-dotnet build BookKeeper/BookKeeper/BookKeeper.sln --no-incremental
-```
+| 元件 | 模式 | 範例 | 位置 |
+|------|------|------|------|
+| **Feature 檔案** | `{Action}{Domain}.cs` | `CreateExpenditure.cs` | `Features/{Domain}/` |
+| **Command/Query** | `Command` / `Query` (巢狀) | `CreateExpenditure.Command` | Feature 檔案內 |
+| **Handler** | `Handler` (巢狀 sealed) | `CreateExpenditure.Handler` | Feature 檔案內 |
+| **Validator** | `Validator` (巢狀) | `CreateExpenditure.Validator` | Feature 檔案內 |
+| **Endpoint** | `{Action}{Domain}Endpoint` | `CreateExpenditureEndpoint` | Feature 檔案內 |
+| **Entity** | `{Domain}` | `Expenditure`, `Label` | `Entities/` |
+| **Entity ID** | `{prefix}_{ULID}` | `e_01J9KT...`, `l_01J9KT...` | 生成於 `Create()` |
+| **Request** | `{Action}{Domain}Request` | `CreateExpenditureRequest` | `Contracts/{Domain}/` |
+| **Response** | `{Domain}Response` | `ExpenditureResponse` | `Contracts/{Domain}/` |
+| **Error** | `{Domain}Errors` | `LabelErrors` | `Shared/Errors/` |
 
 ---
 
-## 📋 新增 Feature 快速清單
+## 📋 新增 Feature 快速檢查清單
 
 ### **Phase 1: 規劃（Architect）**
-```
-□ 確認需求清晰？
-□ 決定 Domain 分類（Expenditure/Income/Label/新？）
-□ 是否需要新 Entity？
-□ 設計 API 路徑與 HTTP 方法
-```
+- [ ] 確認需求清晰？
+- [ ] 決定 Domain 分類（Expenditure/Income/Label/新？）
+- [ ] 是否需要新 Entity？
+- [ ] 設計 API 路徑與 HTTP 方法
 
-### **Phase 2: 實作（Developer）**
+### **Phase 2: Entity & 資料庫（若需要）**
+- [ ] 建立 `Entities/{Domain}.cs`（私有建構函式 + `Create()`）
+- [ ] 建立 `Database/Configurations/{Domain}Configuration.cs`
+- [ ] 更新 `ApplicationDbContext.cs` 新增 `DbSet<{Domain}>`
+- [ ] 執行 `dotnet ef migrations add Add{Domain}`
+- [ ] 檢查生成的 Migration SQL
 
-**若需新 Entity**:
+### **Phase 3: Feature 實作**
+- [ ] 建立 `Features/{Domain}/{Action}{Domain}.cs`
+- [ ] 定義 Command/Query 巢狀類別（實現 `IRequest<Result<T>>`）
+- [ ] 定義 Validator 巢狀類別（繼承 `AbstractValidator<Command>`）
+- [ ] 定義 Handler 巢狀類別（`internal sealed class Handler`）
+- [ ] 定義 Endpoint 類別（實現 `IEndpoint`）
+- [ ] 建立 Request/Response Contracts（若需要）
+
+### **Phase 4: 測試**
+- [ ] 本地啟動成功？（`dotnet run`）
+- [ ] Swagger 顯示端點？（http://localhost:9000/swagger）
+- [ ] 測試成功場景（200/201）
+- [ ] 測試失敗場景（驗證錯誤）
+- [ ] 檢查資料庫寫入正確？
+- [ ] OpenTelemetry Traces 正常？（http://localhost:18888）
+
+### **Phase 5: 記憶更新**
+- [ ] 更新 `project-memory.md` 決策日誌（若有新決策）
+- [ ] 更新 `Tags.cs`（若新增 Domain）
+- [ ] 更新 `copilot-service-memory.md`（新增 Feature 映射）
+
+---
+
+## 🎯 常見任務快速模板
+
+### **1. 新增簡單查詢端點**
+
+**需求**: 為 Expenditure 新增「按月份統計」查詢
+
+**步驟**:
 ```bash
-# 1. 建立 Entity
-touch BookKeeper.Api/Entities/{Domain}.cs
-
-# 2. 建立 EF Configuration
-touch BookKeeper.Api/Database/Configurations/{Domain}Configuration.cs
-
-# 3. 更新 DbContext
-# 編輯 ApplicationDbContext.cs 新增 DbSet
-
-# 4. 建立 Migration
-dotnet ef migrations add Add{Domain} -p BookKeeper.Api
-
-# 5. 檢查 Migration
-# 查看 Migrations/Application/ 資料夾
+# 1. 建立 Feature 檔案
+touch BookKeeper.Api/Features/Expenditures/GetExpendituresByMonth.cs
 ```
 
-**建立 Feature 檔案**:
+**模板**:
+```csharp
+public static class GetExpendituresByMonth
+{
+    public record Query(int Year, int Month) : IRequest<Result<MonthlyStatisticsResponse>>;
+    
+    public class Validator : AbstractValidator<Query>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.Year).InclusiveBetween(2000, 2100);
+            RuleFor(x => x.Month).InclusiveBetween(1, 12);
+        }
+    }
+    
+    internal sealed class Handler(ApplicationDbContext context) 
+        : IRequestHandler<Query, Result<MonthlyStatisticsResponse>>
+    {
+        public async Task<Result<MonthlyStatisticsResponse>> Handle(Query request, CancellationToken ct)
+        {
+            var stats = await context.Expenditures
+                .Where(e => e.PaymentDateOnUtc.Year == request.Year && 
+                            e.PaymentDateOnUtc.Month == request.Month)
+                .GroupBy(e => 1)
+                .Select(g => new MonthlyStatisticsResponse(
+                    g.Sum(e => e.Amount),
+                    g.Count()))
+                .FirstOrDefaultAsync(ct);
+            
+            return stats ?? new MonthlyStatisticsResponse(0, 0);
+        }
+    }
+}
+
+public class GetExpendituresByMonthEndpoint : IEndpoint
+{
+    public void MapEndpoints(IEndpointRouteBuilder app)
+    {
+        app.MapGet("api/expenditures/statistics/{year}/{month}", async (
+            int year, 
+            int month, 
+            ISender sender) =>
+        {
+            var query = new GetExpendituresByMonth.Query(year, month);
+            var result = await sender.Send(query);
+            
+            return result.Match(
+                onSuccess: Results.Ok,
+                onFailure: error => Results.BadRequest(error));
+        })
+        .WithTags(Tags.Expenditures);
+    }
+}
+```
+
+**工時**: 3-5 天（流程 B）
+
+---
+
+### **2. 修復驗證錯誤**
+
+**需求**: CreateExpenditure 允許金額為 0.01
+
+**步驟**:
+```csharp
+// Features/Expenditures/CreateExpenditure.cs
+public class Validator : AbstractValidator<Command>
+{
+    public Validator()
+    {
+        // 修改前: RuleFor(x => x.Amount).GreaterThan(0);
+        // 修改後:
+        RuleFor(x => x.Amount).GreaterThanOrEqualTo(0.01m)
+            .WithMessage("Amount must be at least 0.01");
+    }
+}
+```
+
+**工時**: 1-2 天（流程 C）
+
+---
+
+### **3. 新增 Category Entity + CRUD**
+
+**需求**: 新增 Category 實體與完整 CRUD 端點
+
+**影響範圍**:
+- `Entities/Category.cs`
+- `Database/Configurations/CategoryConfiguration.cs`
+- `ApplicationDbContext.cs`
+- `Features/Categories/` (5 個 Feature 檔案)
+- `Contracts/Categories/` (Request/Response)
+- Migration
+
+**預估**: 1-2 週（流程 A）
+
+**步驟**: 參考 [FEATURE_TEMPLATE.md](./procedures/FEATURE_TEMPLATE.md)
+
+---
+
+## 🚫 常見錯誤與防止
+
+| ❌ 錯誤 | ✅ 正確 | 後果 |
+|--------|--------|------|
+| `throw new Exception()` | 回傳 `Result.Failure<T>(error)` | 違反 Result Pattern |
+| 公開 Entity 建構函式 | 私有 + `Create()` | 無法控制創建邏輯 |
+| 直接查詢 DbContext in Endpoint | 使用 MediatR `sender.Send()` | 違反關注點分離 |
+| 手動註冊端點 | 實現 `IEndpoint` | 破壞自動探索 |
+| 跳過 FluentValidation | 每個 Command 都要 `Validator` | 缺少輸入驗證 |
+| 使用 `DateTime.Now` | 使用 `DateTime.UtcNow` | 時區問題 |
+| 分散 Feature 類別到多檔案 | 所有類別在一個檔案 | 違反 VSA 原則 |
+
+---
+
+## 🔧 故障排除速查
+
+### **問題: Migration 無法執行**
 ```bash
-# 建立主 Feature 檔案
-touch BookKeeper.Api/Features/{Domain}/{Action}{Domain}.cs
+# 解法 1: 刪除 Migration 並重新生成
+dotnet ef migrations remove -p BookKeeper.Api
+dotnet ef migrations add {Name} -p BookKeeper.Api
 
-# 建立 Contracts
-touch BookKeeper.Api/Contracts/{Domain}/{Action}{Domain}Request.cs
-touch BookKeeper.Api/Contracts/{Domain}/{Domain}Response.cs
-
-# 建立 Errors（若需要）
-touch BookKeeper.Api/Shared/Errors/{Domain}Errors.cs
+# 解法 2: 手動修改 Migration 檔案
+# 編輯 Migrations/Application/{Timestamp}_{Name}.cs
 ```
 
-### **Phase 3: 測試**
+### **問題: Endpoint 未顯示在 Swagger**
 ```
-□ 本地啟動成功？
-□ Swagger 顯示端點？
-□ 測試成功場景（200/201）
-□ 測試失敗場景（驗證錯誤、業務錯誤）
-□ 檢查資料庫寫入正確？
-□ OpenTelemetry Traces 正常？
+檢查清單:
+□ 是否實現 IEndpoint？
+□ 是否在 Program.cs 調用 MapEndpoints()？
+□ 是否使用 .WithTags() 分類？
+□ 環境是否為 Development？（Swagger 僅 Dev 啟用）
+```
+
+### **問題: Handler 找不到依賴**
+```
+檢查清單:
+□ ApplicationDbContext 是否已註冊？
+□ 建構函式參數是否正確？
+□ Handler 是否為 internal sealed class？
+□ 是否使用 Primary Constructor？
 ```
 
 ---
 
-## 🎯 常見任務模板
+## 📊 複雜度評估指標
 
-### **1. 新增簡單查詢**
+| 指標 | 流程 C | 流程 B | 流程 A |
+|------|--------|--------|--------|
+| **行數** | <100 | 100-500 | >500 |
+| **涉及檔案** | 1 | 2-3 | 4+ |
+| **新增 Entity** | 無 | 無 | 有 |
+| **Migration** | 無 | 可能 | 必定 |
+| **跨 Domain** | 無 | 無 | 可能 |
+| **工時** | 1-2 天 | 3-5 天 | 1-2 週 |
+| **角色** | Dev→QA→Mem | Arc→Dev→QA→Mem | Arc→Impact→Dev→QA→Mem |
+
+---
+
+## 🔗 相關文檔快速連結
+
+| 文檔 | 用途 | 何時查閱 |
+|------|------|---------|
+| [project-memory.md](./project-memory.md) | 決策日誌與架構約束 | 開始開發前 |
+| [copilot-service-memory.md](./copilot-service-memory.md) | Feature/Endpoint 映射 | 查找既有 API |
+| [WORKFLOW_ROUTES.md](./procedures/WORKFLOW_ROUTES.md) | 流程判斷樹 | 評估任務複雜度 |
+| [FEATURE_TEMPLATE.md](./procedures/FEATURE_TEMPLATE.md) | 新功能模板 | 新增 Feature 時 |
+| [README.md](../README.md) | 專案概覽 | 初次接觸專案 |
+
+---
+
+## 📝 版本歷史
+
+| 版本 | 日期 | 變更摘要 |
+|------|------|---------|
+| v1.0.0 | 2026-01-06 | 初始版本，記錄常用指令與決策樹 |
+| v1.1.0 | 2026-01-08 | 完整重建，新增命名約定速查表、常見任務模板、複雜度指標 |
+
+---
+
+**最後更新**: 2026-01-08  
+**維護者**: GitHub Copilot
 
 ```csharp
 // File: Features/Expenditures/GetExpendituresByLabel.cs
