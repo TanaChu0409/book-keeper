@@ -31,7 +31,8 @@ public static class GetLabels
                 return Result.Failure<PaginationResult<LabelResponse>>(
                     new Error(
                         "GetLabels.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             List<LabelResponse> labelQuery = await dbContext
@@ -72,9 +73,7 @@ public class GetLabelsEndpoint : IEndpoint
                     PageSize = pageSize ?? 10
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

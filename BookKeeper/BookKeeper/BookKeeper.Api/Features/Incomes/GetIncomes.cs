@@ -32,7 +32,8 @@ public static class GetIncomes
                 return Result.Failure<PaginationResult<IncomeResponse>>(
                     new Error(
                         "GetIncomes.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             List<IncomeResponse> incomeQuery = await dbContext
@@ -80,9 +81,7 @@ public class GetIncomesEndpoint : IEndpoint
                     PageSize = pageSize ?? 10
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

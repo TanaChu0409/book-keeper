@@ -57,7 +57,8 @@ public static class CreateExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "CreateExpenditure.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -66,7 +67,8 @@ public static class CreateExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "CreateExpenditure.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -80,7 +82,8 @@ public static class CreateExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "CreateExpenditure.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             var expenditure = Expenditure.Create(
@@ -114,9 +117,7 @@ public class CreateExpenditureEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: (value) => Results.Ok(value),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

@@ -40,7 +40,8 @@ public static class DeleteIncome
                 return Result.Failure(
                     new Error(
                         "DeleteIncome.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -49,7 +50,8 @@ public static class DeleteIncome
                 return Result.Failure(
                     new Error(
                         "DeleteIncome.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
@@ -62,7 +64,8 @@ public static class DeleteIncome
                 return Result.Failure(
                     new Error(
                         "DeleteIncome.IncomeNotFound",
-                        $"Income with ID '{request.IncomeId}' was not found"));
+                        $"Income with ID '{request.IncomeId}' was not found",
+                        ErrorType.NotFound));
             }
 
             dbContext.Incomes.Remove(income);
@@ -86,9 +89,7 @@ public class DeleteIncomeEndpoint : IEndpoint
                     IncomeId = id
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent,Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

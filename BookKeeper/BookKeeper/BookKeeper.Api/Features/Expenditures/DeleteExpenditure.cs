@@ -40,7 +40,8 @@ public static class DeleteExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "DeleteExpenditure.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -49,7 +50,8 @@ public static class DeleteExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "DeleteExpenditure.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Expenditure? expenditure = await dbContext.Expenditures.FirstOrDefaultAsync(
@@ -62,7 +64,8 @@ public static class DeleteExpenditure
                 return Result.Failure(
                     new Error(
                         "DeleteExpenditure.ExpeditureNotFound",
-                        $"Expenditure with ID '{request.ExpenditureId}' was not found"));
+                        $"Expenditure with ID '{request.ExpenditureId}' was not found",
+                        ErrorType.NotFound));
             }
 
             dbContext.Expenditures.Remove(expenditure);
@@ -86,9 +89,7 @@ public class DeleteExpenditureEndpoint : IEndpoint
                     ExpenditureId = id
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

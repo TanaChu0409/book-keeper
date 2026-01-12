@@ -35,7 +35,8 @@ public static class GetExpenditures
                 return Result.Failure<PaginationResult<ExpenditureResponse>>(
                     new Error(
                         "GetExpenditures.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             List<ExpenditureResponse> expenditureQuery = await dbContext
@@ -82,9 +83,7 @@ public class GetExpendituresEndpoint : IEndpoint
                     Page = page ?? 1,
                     PageSize = pageSize ?? 10
                 });
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

@@ -60,7 +60,8 @@ public static class UpdateExpenditure
                 return Result.Failure(
                     new Error(
                         "UpdateExpenditure.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -69,7 +70,8 @@ public static class UpdateExpenditure
                 return Result.Failure(
                     new Error(
                         "UpdateExpenditure.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Expenditure? expenditure = await dbContext.Expenditures.FirstOrDefaultAsync(
@@ -82,7 +84,8 @@ public static class UpdateExpenditure
                 return Result.Failure(
                     new Error(
                     "UpdateExpenditure.ExpeditureNotFound",
-                    $"Expenditure with ID '{request.ExpenditureId}' was not found"));
+                    $"Expenditure with ID '{request.ExpenditureId}' was not found",
+                    ErrorType.NotFound));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -96,7 +99,8 @@ public static class UpdateExpenditure
                 return Result.Failure<string>(
                     new Error(
                         "UpdateExpenditure.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             expenditure.Update(
@@ -131,9 +135,7 @@ public class UpdateExpenditureEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent,Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

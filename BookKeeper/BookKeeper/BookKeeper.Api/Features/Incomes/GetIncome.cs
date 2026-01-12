@@ -30,7 +30,8 @@ public static class GetIncome
                 return Result.Failure<IncomeResponse>(
                     new Error(
                         "GetIncome.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             IncomeResponse? incomeResponse = await dbContext
@@ -57,8 +58,9 @@ public static class GetIncome
             {
                 return Result.Failure<IncomeResponse>(
                     new Error(
-                            "GetIncome.Null",
-                            "The income with the specified ID was not found"));
+                        "GetIncome.Null",
+                        "The income with the specified ID was not found",
+                        ErrorType.NotFound));
             }
 
             return incomeResponse;
@@ -78,9 +80,7 @@ public class GetIncomeEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

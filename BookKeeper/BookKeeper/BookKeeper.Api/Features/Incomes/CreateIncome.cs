@@ -58,7 +58,8 @@ public static class CreateIncome
                 return Result.Failure<string>(
                     new Error(
                         "CreateIncome.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -67,7 +68,8 @@ public static class CreateIncome
                 return Result.Failure<string>(
                     new Error(
                         "CreateIncome.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -82,7 +84,8 @@ public static class CreateIncome
                 return Result.Failure<string>(
                     new Error(
                         "CreateIncome.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             var income = Income.Create(
@@ -114,9 +117,7 @@ public class CreateIncomeEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: (value) => Results.Ok(value),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok,Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

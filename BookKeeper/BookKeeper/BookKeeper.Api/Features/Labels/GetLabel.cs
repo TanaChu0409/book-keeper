@@ -27,7 +27,8 @@ public static class GetLabel
                 return Result.Failure<LabelResponse>(
                     new Error(
                         "GetLabel.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             LabelResponse? labelResponse = await dbContext
@@ -47,8 +48,9 @@ public static class GetLabel
             {
                 return Result.Failure<LabelResponse>(
                     new Error(
-                        "GetLabel.Null",
-                        "The label with the specified ID was not found"));
+                        "GetLabel.NotFound",
+                        "The label with the specified ID was not found",
+                        ErrorType.NotFound));
             }
 
             return labelResponse;
@@ -68,9 +70,7 @@ public class GetLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

@@ -27,7 +27,8 @@ public static class DeleteLabel
                 return Result.Failure(
                     new Error(
                         "DeleteLabel.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -39,7 +40,8 @@ public static class DeleteLabel
                 return Result.Failure(
                     new Error(
                         "Label.NotFound",
-                        $"Label with id '{request.Id}' was not found."));
+                        $"Label with id '{request.Id}' was not found.",
+                        ErrorType.NotFound));
             }
 
             label.Deleted();
@@ -63,9 +65,7 @@ public sealed class DeleteLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

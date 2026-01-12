@@ -62,7 +62,8 @@ public static class UpdateIncome
                 return Result.Failure(
                     new Error(
                         "UpdateIncome.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -71,7 +72,8 @@ public static class UpdateIncome
                 return Result.Failure(
                     new Error(
                         "UpdateIncome.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
@@ -84,7 +86,8 @@ public static class UpdateIncome
                 return Result.Failure(
                     new Error(
                         "UpdateIncome.IncomeNotFound",
-                        $"Income with ID '{request.IncomeId}' was not found."));
+                        $"Income with ID '{request.IncomeId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -98,7 +101,8 @@ public static class UpdateIncome
                 return Result.Failure<string>(
                     new Error(
                         "UpdateIncome.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             income.Update(
@@ -133,9 +137,7 @@ public class UpdateIncomeEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

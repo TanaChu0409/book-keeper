@@ -46,7 +46,8 @@ public static class UpdateLabel
                 return Result.Failure(
                     new Error(
                         "UpdateLabel.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -55,7 +56,8 @@ public static class UpdateLabel
                 return Result.Failure(
                     new Error(
                         "UpdateLabel.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
@@ -68,7 +70,8 @@ public static class UpdateLabel
                 return Result.Failure(
                     new Error(
                     "UpdateLabel.NotFound",
-                    $"Label with ID '{request.Id}' was not found."));
+                    $"Label with ID '{request.Id}' was not found.",
+                    ErrorType.NotFound));
             }
 
             label.Update(request.Name, request.IsIncome);
@@ -84,7 +87,7 @@ public class UpdateLabelEnpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapPut("api/label/{id}", async (
+        app.MapPut("api/labels/{id}", async (
             string id,
             UpdateLabelRequest request,
             ISender sender) =>
@@ -97,9 +100,7 @@ public class UpdateLabelEnpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

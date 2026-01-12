@@ -43,7 +43,8 @@ public static class CreateLabel
                 return Result.Failure<string>(
                     new Error(
                         "CreateLabel.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
@@ -52,7 +53,8 @@ public static class CreateLabel
                 return Result.Failure<string>(
                     new Error(
                         "CreateLabel.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             var label = Label.Create(request.Name, request.IsIncome, userId);
@@ -78,9 +80,7 @@ public class CreateLabelEndpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

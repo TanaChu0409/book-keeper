@@ -28,7 +28,8 @@ public static class GetExpenditure
                 return Result.Failure<ExpenditureResponse>(
                     new Error(
                         "GetExpenditure.Unauthorized",
-                        "User is not authenticated."));
+                        "User is not authenticated.",
+                        ErrorType.Problem));
             }
 
             ExpenditureResponse? expenditureResponse = await dbContext
@@ -57,7 +58,8 @@ public static class GetExpenditure
                 return Result.Failure<ExpenditureResponse>(
                     new Error(
                         "GetExpenditure.Null",
-                        "The expenditure with the specified ID was not found"));
+                        "The expenditure with the specified ID was not found",
+                        ErrorType.NotFound));
             }
 
             return expenditureResponse;
@@ -77,9 +79,7 @@ public class GetExpenditureEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }
