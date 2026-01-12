@@ -135,7 +135,7 @@ public class UpdateExpenditureEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(Results.NoContent,Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }
