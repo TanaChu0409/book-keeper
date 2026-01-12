@@ -168,6 +168,7 @@ public sealed class RegisterUserEndpoint : IEndpoint
 
             return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
+        .AllowAnonymous()
         .WithTags(Tags.Auth);
     }
 }

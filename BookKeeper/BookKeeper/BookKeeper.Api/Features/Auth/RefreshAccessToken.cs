@@ -1,4 +1,4 @@
-using BookKeeper.Api.ApiResults;
+﻿using BookKeeper.Api.ApiResults;
 using BookKeeper.Api.Clock;
 using BookKeeper.Api.Contracts.Auth;
 using BookKeeper.Api.Database;
@@ -139,6 +139,7 @@ public sealed class RefreshAccessTokenEndpoint : IEndpoint
 
             return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
+        .AllowAnonymous()
         .WithTags(Tags.Auth);
     }
 }
