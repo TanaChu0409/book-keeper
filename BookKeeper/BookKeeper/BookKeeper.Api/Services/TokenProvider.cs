@@ -23,7 +23,7 @@ internal sealed class TokenProvider(IOptions<JwtAuthOptions> options)
     private string GenerateAccessToken(TokenRequest tokenRequest)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtAuthOptions.Key));
-        var credientials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         List<Claim> claims =
         [
@@ -36,7 +36,7 @@ internal sealed class TokenProvider(IOptions<JwtAuthOptions> options)
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(_jwtAuthOptions.ExpirationInMinutes),
-            SigningCredentials = credientials,
+            SigningCredentials = credentials,
             Issuer = _jwtAuthOptions.Issuer,
             Audience = _jwtAuthOptions.Audience
         };
