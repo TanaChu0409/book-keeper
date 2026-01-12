@@ -1,6 +1,6 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.1.0 | **最後更新**: 2026-01-08 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
@@ -78,7 +78,8 @@
 | 2026-01-06 | #006 | MediatR for CQRS | 命令/查詢分離、解耦處理邏輯、單一職責原則 | 所有 Feature Handlers |
 | 2026-01-06 | #007 | FluentValidation 整合 | 聲明式驗證、與 MediatR Pipeline 整合、清晰的驗證規則 | 所有 Command Validators |
 | 2026-01-06 | #008 | Snake_case 資料庫命名 | PostgreSQL 慣例、可讀性、自動轉換 | `EFCore.NamingConventions` 套件 |
-| 2026-01-08 | #009 | 重建 my-ai-swarm 記憶系統 | 符合 copilot-instructions.md 標準、建立決策追蹤機制、支援 Workflow 協作 | `my-ai-swarm/` 全目錄結構
+| 2026-01-08 | #009 | 重建 my-ai-swarm 記憶系統 | 符合 copilot-instructions.md 標準、建立決策追蹤機制、支援 Workflow 協作 | `my-ai-swarm/` 全目錄結構 |
+| 2026-01-12 | #010 | 新增 Auth Register/Login/Refresh | 補齊 JWT 認證流程：新增 Register/Login/Refresh 三個端點，註冊時建立 Identity + Domain User 並預設 Member 角色，登入檢驗帳密並回傳 access/refresh tokens。Refresh Token 採單一活躍策略，簽發前清除舊 token，過期或無效即刪除，避免多重 session 安全風險；沿用 Identity 預設密碼策略，使用 TokenProvider + JwtAuthOptions 控管到期時間，讓後續 API 透過 Authorization header 與 UserContext 能正確解析 Domain User。 | `Features/Auth/*`, `Contracts/Auth/*`, `Tags.cs`, `my-ai-swarm/*` |
 
 ---
 

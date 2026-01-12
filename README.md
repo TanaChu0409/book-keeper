@@ -117,6 +117,17 @@ docker exec -it bookkeeper.database psql -U postgres -d bookkeeper
 
 ## API 端點參考
 
+### Auth（認證）
+| HTTP | 端點 | 功能 |
+|------|------|------|
+| POST | `/api/auth/register` | 註冊帳號、指派 Member 角色並回傳 access/refresh token |
+| POST | `/api/auth/login` | 驗證帳密並回傳新的 token pair |
+| POST | `/api/auth/refresh` | 驗證 refresh token，過期/無效即清除並輪替新 token |
+
+**說明**:
+- JWT Bearer 驗證，Access Token 需放在 `Authorization: Bearer {token}`。
+- Refresh Token 採單一活躍策略，新簽發會清除舊值。
+
 ### Labels（標籤管理）
 | HTTP | 端點 | 功能 |
 |------|------|------|

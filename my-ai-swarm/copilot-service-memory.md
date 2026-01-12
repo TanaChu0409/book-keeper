@@ -1,6 +1,6 @@
 # BookKeeper - Service Memory (服務清單)
 
-> **版本**: v1.1.0 | **最後更新**: 2026-01-08 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
+> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
 
 ---
 
@@ -36,6 +36,37 @@
 │   (支出)     │
 └──────────────┘
 ```
+
+---
+
+## 📂 Auth (認證)
+
+### Feature 清單
+
+| Feature | HTTP | 端點 | Handler | 用途 |
+|---------|------|------|---------|------|
+| **RegisterUser** | POST | `/api/auth/register` | `RegisterUser.Handler` | 建立 Identity + Domain 用戶、指派 Member 角色、產生 access/refresh token |
+| **LoginUser** | POST | `/api/auth/login` | `LoginUser.Handler` | 驗證帳密、產生新的 access/refresh token（單一 active refresh） |
+| **RefreshAccessToken** | POST | `/api/auth/refresh` | `RefreshAccessToken.Handler` | 驗證 refresh token、過期即刪除、嚴格輪替僅保留一組刷新憑證 |
+
+**備註**:
+- Refresh Token 儲存於 `identity` schema 的 `RefreshTokens`，同一用戶只保留一筆有效記錄（新簽發會清除舊 token）。
+- 預設角色指派為 Member；密碼策略沿用 Identity 預設設定。
+
+---
+
+## 📂 Users (用戶管理)
+
+### Feature 清單
+
+| Feature | HTTP | 端點 | Handler | 用途 |
+|---------|------|------|---------|------|
+| **GetCurrentUser** | GET | `/api/users/me` | `GetCurrentUser.Handler` | 取得當前登入用戶基本資料 |
+| **GetUserById** | GET | `/api/users/{id}` | `GetUserById.Handler` | Admin 查詢指定用戶資料 |
+
+**備註**:
+- `GetUserById` 需 Admin 角色授權；`GetCurrentUser` 需登入。
+- 回傳欄位: id、email、name、createdAtUtc、updatedAtUtc。
 
 ---
 
@@ -511,8 +542,9 @@ public class Validator : AbstractValidator<Command>
 |------|------|---------|
 | v1.0.0 | 2026-01-06 | 初始版本，記錄 Labels/Incomes/Expenditures 服務 |
 | v1.1.0 | 2026-01-08 | 完整重建，新增詳細 API 規格、Handler 依賴關係、錯誤類別清單 |
+| v1.2.0 | 2026-01-12 | 新增 Users 區塊，列出 GetCurrentUser / GetUserById 端點 (Admin 限制) |
 
 ---
 
-**最後更新**: 2026-01-08  
+**最後更新**: 2026-01-12  
 **維護者**: GitHub Copilot
