@@ -1,9 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Clock;
+﻿using BookKeeper.Api.Clock;
 using BookKeeper.Api.Contracts.Auth;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Services;
 using BookKeeper.Api.Settings;
 using BookKeeper.Api.Shared;
@@ -12,6 +12,7 @@ using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
 namespace BookKeeper.Api.Features.Auth;
@@ -55,6 +56,8 @@ public static class RefreshAccessToken
                         ErrorType.Validation));
             }
 
+            using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync(cancellationToken);
+
             RefreshToken? storedToken = await identityDbContext.RefreshTokens
                 .AsTracking()
                 .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken, cancellationToken);
@@ -73,7 +76,7 @@ public static class RefreshAccessToken
                     new Error(
                         "Refresh.TokenExpired",
                         "The refresh token has expired.",
-                        ErrorType.Problem));
+                        ErrorType.Unauthorized));
             }
 
             IdentityUser? identityUser = await userManager.FindByIdAsync(storedToken.UserId);
@@ -94,6 +97,8 @@ public static class RefreshAccessToken
                     roles));
 
             await RotateRefreshTokenAsync(identityUser.Id, tokens.RefreshToken, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
 
             return tokens;
         }
@@ -121,7 +126,7 @@ public static class RefreshAccessToken
                 new Error(
                     "Refresh.InvalidToken",
                     "The refresh token is invalid.",
-                    ErrorType.Problem));
+                    ErrorType.Unauthorized));
     }
 }
 

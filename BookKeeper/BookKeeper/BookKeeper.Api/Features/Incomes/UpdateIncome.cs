@@ -1,8 +1,8 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Incomes;
+﻿using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;

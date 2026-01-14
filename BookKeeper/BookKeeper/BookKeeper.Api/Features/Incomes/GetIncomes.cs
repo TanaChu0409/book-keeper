@@ -1,5 +1,4 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Common;
+﻿using BookKeeper.Api.Contracts.Common;
 using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;

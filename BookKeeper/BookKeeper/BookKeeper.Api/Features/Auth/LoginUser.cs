@@ -1,9 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Clock;
+﻿using BookKeeper.Api.Clock;
 using BookKeeper.Api.Contracts.Auth;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Services;
 using BookKeeper.Api.Settings;
 using BookKeeper.Api.Shared;
@@ -12,6 +12,7 @@ using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
 namespace BookKeeper.Api.Features.Auth;
@@ -61,6 +62,10 @@ public static class LoginUser
                         ErrorType.Validation));
             }
 
+            using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync(cancellationToken);
+            applicationDbContext.Database.SetDbConnection(identityDbContext.Database.GetDbConnection());
+            await applicationDbContext.Database.UseTransactionAsync(transaction.GetDbTransaction(), cancellationToken);
+
             IdentityUser? identityUser = await userManager.FindByEmailAsync(request.Email);
             if (identityUser is null)
             {
@@ -94,7 +99,12 @@ public static class LoginUser
                     identityUser.Email ?? request.Email,
                     roles));
 
-            await RotateRefreshTokenAsync(identityUser.Id, tokens.RefreshToken, cancellationToken);
+            await RotateRefreshTokenAsync(
+                identityUser.Id, 
+                tokens.RefreshToken, 
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
 
             return tokens;
         }
@@ -104,9 +114,12 @@ public static class LoginUser
                 new Error(
                     "Login.InvalidCredentials",
                     "Invalid email or password.",
-                    ErrorType.Problem));
+                    ErrorType.Unauthorized));
 
-        private async Task RotateRefreshTokenAsync(string identityUserId, string refreshToken, CancellationToken cancellationToken)
+        private async Task RotateRefreshTokenAsync(
+            string identityUserId,
+            string refreshToken, 
+            CancellationToken cancellationToken)
         {
             await identityDbContext.RefreshTokens
                 .Where(rt => rt.UserId == identityUserId)

@@ -1,9 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Clock;
+﻿using BookKeeper.Api.Clock;
 using BookKeeper.Api.Contracts.Auth;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Services;
 using BookKeeper.Api.Settings;
 using BookKeeper.Api.Shared;
@@ -12,6 +12,8 @@ using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace BookKeeper.Api.Features.Auth;
@@ -54,7 +56,8 @@ public static class RegisterUser
         TokenProvider tokenProvider,
         IValidator<Command> validator,
         IDateTimeProvider dateTimeProvider,
-        IOptions<JwtAuthOptions> jwtOptions)
+        IOptions<JwtAuthOptions> jwtOptions,
+        ILogger<Handler> logger)
         : IRequestHandler<Command, Result<AccessTokenDto>>
     {
         private readonly JwtAuthOptions _jwtOptions = jwtOptions.Value;
@@ -70,6 +73,10 @@ public static class RegisterUser
                         validationResult.ToString(),
                         ErrorType.Validation));
             }
+
+            using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync(cancellationToken);
+            applicationDbContext.Database.SetDbConnection(identityDbContext.Database.GetDbConnection());
+            await applicationDbContext.Database.UseTransactionAsync(transaction.GetDbTransaction(), cancellationToken);
 
             IdentityUser? existingUser = await userManager.FindByEmailAsync(request.Email);
             if (existingUser is not null)
@@ -90,9 +97,19 @@ public static class RegisterUser
             IdentityResult createIdentityResult = await userManager.CreateAsync(identityUser, request.Password);
             if (!createIdentityResult.Succeeded)
             {
+                var extensions = new Dictionary<string, object?>
+                {
+                    {
+                        "errors",
+                        createIdentityResult.Errors.ToDictionary(e => e.Code, e => e.Description)
+                    }
+                };
+                logger.LogError("{@Extensions}", extensions);
+
                 string errors = string.Join(
                     "; ",
                     createIdentityResult.Errors.Select(e => e.Description));
+
 
                 return Result.Failure<AccessTokenDto>(
                     new Error(
@@ -104,6 +121,15 @@ public static class RegisterUser
             IdentityResult addToRoleResult = await userManager.AddToRoleAsync(identityUser, Roles.Member);
             if (!addToRoleResult.Succeeded)
             {
+                var extensions = new Dictionary<string, object?>
+                {
+                    {
+                        "errors",
+                        addToRoleResult.Errors.ToDictionary(e => e.Code, e => e.Description)
+                    }
+                };
+                logger.LogError("{@Extensions}", extensions);
+
                 string errors = string.Join(
                     "; ",
                     addToRoleResult.Errors.Select(e => e.Description));
@@ -115,7 +141,11 @@ public static class RegisterUser
                         ErrorType.Problem));
             }
 
-            var user = User.Create(request.Email, request.Name, dateTimeProvider.UtcNow);
+            var user = User.Create(
+                request.Email,
+                request.Name, 
+                dateTimeProvider.UtcNow);
+
             user.SetIdentityId(identityUser.Id);
 
             await applicationDbContext.Users.AddAsync(user, cancellationToken);
@@ -124,14 +154,25 @@ public static class RegisterUser
             IList<string> roles = await userManager.GetRolesAsync(identityUser);
 
             AccessTokenDto tokens = tokenProvider.Create(
-                new TokenRequest(identityUser.Id, request.Email, roles));
+                new TokenRequest(
+                    identityUser.Id, 
+                    request.Email, 
+                    roles));
 
-            await RotateRefreshTokenAsync(identityUser.Id, tokens.RefreshToken, cancellationToken);
+            await RotateRefreshTokenAsync(
+                identityUser.Id, 
+                tokens.RefreshToken, 
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
 
             return tokens;
         }
 
-        private async Task RotateRefreshTokenAsync(string identityUserId, string refreshToken, CancellationToken cancellationToken)
+        private async Task RotateRefreshTokenAsync(
+            string identityUserId, 
+            string refreshToken, 
+            CancellationToken cancellationToken)
         {
             await identityDbContext.RefreshTokens
                 .Where(rt => rt.UserId == identityUserId)

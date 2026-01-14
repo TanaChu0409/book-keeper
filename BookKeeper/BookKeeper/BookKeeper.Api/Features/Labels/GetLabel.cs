@@ -1,7 +1,7 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Labels;
+﻿using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Extensions;
 using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
