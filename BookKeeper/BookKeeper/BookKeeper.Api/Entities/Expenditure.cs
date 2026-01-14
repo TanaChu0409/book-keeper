@@ -14,12 +14,14 @@ public sealed class Expenditure
     public DateTime? UpdatedOnUtc { get; private set; }
     public string LabelId { get; private set; }
     public Label Label { get; private set; }
-
+    public string UserId { get; private set; }
+    
     public static Expenditure Create(
         string paymentName,
         decimal amount,
         DateOnly paymentDateOnUtc,
-        Label label) =>
+        Label label,
+        string userId) =>
         new()
         {
             Id = $"e_{Ulid.NewUlid()}",
@@ -28,6 +30,7 @@ public sealed class Expenditure
             PaymentDateOnUtc = paymentDateOnUtc,
             Label = label,
             LabelId = label.Id,
+            UserId = userId,
             CreatedOnUtc = DateTime.UtcNow
         };
 

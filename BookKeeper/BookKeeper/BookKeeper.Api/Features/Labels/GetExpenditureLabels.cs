@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Common;
+﻿using BookKeeper.Api.Contracts.Common;
 using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,19 +12,31 @@ namespace BookKeeper.Api.Features.Labels;
 
 public static class GetExpenditureLabels
 {
-    public class Query : IRequest<PaginationResult<LabelResponse>>
+    public class Query : IRequest<Result<PaginationResult<LabelResponse>>>
     {
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
-        : IRequestHandler<Query, PaginationResult<LabelResponse>>
+    internal sealed class Handler(
+        ApplicationDbContext dbContext,
+        UserContext userContext)
+        : IRequestHandler<Query, Result<PaginationResult<LabelResponse>>>
     {
-        public async Task<PaginationResult<LabelResponse>> Handle(
+        public async Task<Result<PaginationResult<LabelResponse>>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<PaginationResult<LabelResponse>>(
+                    new Error(
+                        "GetExpenditureLabels.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             List<LabelResponse> labelQuery = await dbContext
                  .Labels
                  .Where(l => !l.IsIncome)
@@ -62,9 +75,7 @@ public class GetExpenditureLabelsEndpoint : IEndpoint
                     PageSize = pageSize ?? 10
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (errors) => Results.BadRequest(errors));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

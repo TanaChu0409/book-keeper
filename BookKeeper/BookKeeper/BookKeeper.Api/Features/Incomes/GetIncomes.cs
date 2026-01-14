@@ -1,9 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Common;
+﻿using BookKeeper.Api.Contracts.Common;
 using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,15 +18,26 @@ public static class GetIncomes
         public int PageSize { get; set; } = 10;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<PaginationResult<IncomeResponse>>>
     {
         public async Task<Result<PaginationResult<IncomeResponse>>> Handle(
             Query request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<PaginationResult<IncomeResponse>>(
+                    new Error(
+                        "GetIncomes.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             List<IncomeResponse> incomeQuery = await dbContext
                 .Incomes
+                .Where(i => i.UserId == userId)
                 .Include(i => i.Label)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -69,9 +80,7 @@ public class GetIncomesEndpoint : IEndpoint
                     PageSize = pageSize ?? 10
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

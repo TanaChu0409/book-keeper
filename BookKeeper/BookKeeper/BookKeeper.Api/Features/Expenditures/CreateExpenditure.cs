@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Expenditures;
+﻿using BookKeeper.Api.Contracts.Expenditures;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -44,39 +45,53 @@ public static class CreateExpenditure
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator) 
+        IValidator<Command> validator,
+        UserContext userContext) 
         : IRequestHandler<Command, Result<string>>
     {
         public async Task<Result<string>> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<string>(
+                    new Error(
+                        "CreateExpenditure.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure<string>(
                     new Error(
                         "CreateExpenditure.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                            x =>
-                                x.Id == request.LabelId &&
-                                !x.IsDeleted,
-                            cancellationToken);
+                x => x.Id == request.LabelId &&
+                     !x.IsDeleted &&
+                     x.UserId == userId,
+                cancellationToken);
 
             if (label is null)
             {
                 return Result.Failure<string>(
                     new Error(
                         "CreateExpenditure.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             var expenditure = Expenditure.Create(
                 request.PaymentName,
                 request.Amount,
                 request.PaymentDateOnUtc,
-                label);
+                label,
+                userId);
 
             await dbContext.Expenditures.AddAsync(expenditure, cancellationToken);
 
@@ -102,9 +117,7 @@ public class CreateExpenditureEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: (value) => Results.Ok(value),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

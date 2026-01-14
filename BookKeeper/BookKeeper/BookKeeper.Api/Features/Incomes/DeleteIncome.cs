@@ -1,7 +1,8 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Database;
+﻿using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -27,22 +28,35 @@ public static class DeleteIncome
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "DeleteIncome.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure(
                     new Error(
                         "DeleteIncome.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
-                x => x.Id == request.IncomeId,
+                x => x.Id == request.IncomeId &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (income is null)
@@ -50,7 +64,8 @@ public static class DeleteIncome
                 return Result.Failure(
                     new Error(
                         "DeleteIncome.IncomeNotFound",
-                        $"Income with ID '{request.IncomeId}' was not found"));
+                        $"Income with ID '{request.IncomeId}' was not found",
+                        ErrorType.NotFound));
             }
 
             dbContext.Incomes.Remove(income);
@@ -74,9 +89,7 @@ public class DeleteIncomeEndpoint : IEndpoint
                     IncomeId = id
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

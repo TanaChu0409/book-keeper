@@ -59,6 +59,12 @@ namespace BookKeeper.Api.Migrations.Application
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_on_utc");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_expenditures");
 
@@ -104,6 +110,12 @@ namespace BookKeeper.Api.Migrations.Application
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_on_utc");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_incomes");
 
@@ -142,10 +154,63 @@ namespace BookKeeper.Api.Migrations.Application
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_on_utc");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_labels");
 
                     b.ToTable("labels", "bookkeeper");
+                });
+
+            modelBuilder.Entity("BookKeeper.Api.Entities.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("IdentityId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("identity_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_users");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_email");
+
+                    b.HasIndex("IdentityId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_identity_id");
+
+                    b.ToTable("users", "bookkeeper");
                 });
 
             modelBuilder.Entity("BookKeeper.Api.Entities.Expenditure", b =>

@@ -9,7 +9,8 @@ builder.AddApiService()
     .AddErrorHandling()
     .AddDatabase()
     .AddObservability() 
-    .AddApplicationServices();
+    .AddApplicationServices()
+    .AddAuthenticationService();
 
 WebApplication app = builder.Build();
 
@@ -19,11 +20,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 
     await app.ApplyMigrationsAsync();
+    await app.SeedInitialDataAsync();
 }
 
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapEndpoints();
 

@@ -1,7 +1,8 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Labels;
+﻿using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,15 +16,26 @@ public static class GetLabel
         public string Id { get; set; }
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<LabelResponse>>
     {
         public async Task<Result<LabelResponse>> Handle(Query request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<LabelResponse>(
+                    new Error(
+                        "GetLabel.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             LabelResponse? labelResponse = await dbContext
                 .Labels
                 .AsNoTracking()
-                .Where(l => l.Id == request.Id)
+                .Where(l => l.Id == request.Id &&
+                            l.UserId == userId)
                 .Select(l => new LabelResponse
                 {
                     Id = l.Id,
@@ -36,8 +48,9 @@ public static class GetLabel
             {
                 return Result.Failure<LabelResponse>(
                     new Error(
-                        "GetLabel.Null",
-                        "The label with the specified ID was not found"));
+                        "GetLabel.NotFound",
+                        "The label with the specified ID was not found",
+                        ErrorType.NotFound));
             }
 
             return labelResponse;
@@ -57,9 +70,7 @@ public class GetLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Labels;
+﻿using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -33,22 +34,35 @@ public static class UpdateLabel
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "UpdateLabel.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure(
                     new Error(
                         "UpdateLabel.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                l => l.Id == request.Id,
+                l => l.Id == request.Id &&
+                     l.UserId == userId,
                 cancellationToken);
 
             if (label is null)
@@ -56,7 +70,8 @@ public static class UpdateLabel
                 return Result.Failure(
                     new Error(
                     "UpdateLabel.NotFound",
-                    $"Label with ID '{request.Id}' was not found."));
+                    $"Label with ID '{request.Id}' was not found.",
+                    ErrorType.NotFound));
             }
 
             label.Update(request.Name, request.IsIncome);
@@ -72,7 +87,7 @@ public class UpdateLabelEnpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapPut("api/label/{id}", async (
+        app.MapPut("api/labels/{id}", async (
             string id,
             UpdateLabelRequest request,
             ISender sender) =>
@@ -85,9 +100,7 @@ public class UpdateLabelEnpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

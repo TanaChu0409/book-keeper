@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Labels;
+﻿using BookKeeper.Api.Contracts.Labels;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -30,21 +31,33 @@ public static class CreateLabel
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result<string>>
     {
         public async Task<Result<string>> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<string>(
+                    new Error(
+                        "CreateLabel.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure<string>(
                     new Error(
                         "CreateLabel.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
-            var label = Label.Create(request.Name, request.IsIncome);
+            var label = Label.Create(request.Name, request.IsIncome, userId);
 
             await dbContext.Labels.AddAsync(label, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -67,9 +80,7 @@ public class CreateLabelEndpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

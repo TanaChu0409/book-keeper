@@ -10,17 +10,20 @@ public sealed class Label
     public string Name { get; private set; }
     public bool IsDeleted { get; private set; }
     public bool IsIncome { get; private set; }
+    public string UserId { get; private set; }
     public DateTime CreatedOnUtc { get; private set; }
     public DateTime? UpdatedOnUtc { get; private set; }
 
     public static Label Create(
         string name,
-        bool isIncome) =>
+        bool isIncome,
+        string userId) =>
         new()
         {
             Id = $"l_{Ulid.NewUlid()}",
             Name = name,
             IsIncome = isIncome,
+            UserId = userId,
             IsDeleted = false,
             CreatedOnUtc = DateTime.UtcNow
         };

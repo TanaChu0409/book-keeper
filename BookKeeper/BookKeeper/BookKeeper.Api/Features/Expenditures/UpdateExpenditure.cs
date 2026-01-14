@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Expenditures;
+﻿using BookKeeper.Api.Contracts.Expenditures;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -47,23 +48,35 @@ public static class UpdateExpenditure
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "UpdateExpenditure.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure(
                     new Error(
                         "UpdateExpenditure.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Expenditure? expenditure = await dbContext.Expenditures.FirstOrDefaultAsync(
-                x =>
-                    x.Id == request.ExpenditureId,
+                x => x.Id == request.ExpenditureId &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (expenditure is null)
@@ -71,21 +84,23 @@ public static class UpdateExpenditure
                 return Result.Failure(
                     new Error(
                     "UpdateExpenditure.ExpeditureNotFound",
-                    $"Expenditure with ID '{request.ExpenditureId}' was not found"));
+                    $"Expenditure with ID '{request.ExpenditureId}' was not found",
+                    ErrorType.NotFound));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                            x =>
-                                x.Id == request.LabelId &&
-                                !x.IsDeleted,
-                            cancellationToken);
+                x => x.Id == request.LabelId &&
+                     !x.IsDeleted &&
+                     x.UserId == userId,
+                cancellationToken);
 
             if (label is null)
             {
                 return Result.Failure<string>(
                     new Error(
                         "UpdateExpenditure.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             expenditure.Update(
@@ -120,9 +135,7 @@ public class UpdateExpenditureEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

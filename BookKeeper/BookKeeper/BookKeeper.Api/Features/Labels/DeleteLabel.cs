@@ -1,7 +1,8 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Database;
+﻿using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,20 +16,32 @@ public static class DeleteLabel
         public string Id { get; set; } = string.Empty;
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(Command request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "DeleteLabel.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                l => l.Id == request.Id,
+                l => l.Id == request.Id &&
+                     l.UserId == userId,
                 cancellationToken);
             if (label is null)
             {
                 return Result.Failure(
                     new Error(
                         "Label.NotFound",
-                        $"Label with id '{request.Id}' was not found."));
+                        $"Label with id '{request.Id}' was not found.",
+                        ErrorType.NotFound));
             }
 
             label.Deleted();
@@ -52,9 +65,7 @@ public sealed class DeleteLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

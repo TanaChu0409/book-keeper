@@ -1,8 +1,8 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Expenditures;
+﻿using BookKeeper.Api.Contracts.Expenditures;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +16,27 @@ public static class GetExpenditure
         public string Id { get; set; }
     }
 
-    internal sealed class Handler(ApplicationDbContext dbContext)
+    internal sealed class Handler(ApplicationDbContext dbContext, UserContext userContext)
         : IRequestHandler<Query, Result<ExpenditureResponse>>
     {
         public async Task<Result<ExpenditureResponse>> Handle(Query request, CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure<ExpenditureResponse>(
+                    new Error(
+                        "GetExpenditure.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ExpenditureResponse? expenditureResponse = await dbContext
                 .Expenditures
                 .AsNoTracking()
-                .Where(expenditure => expenditure.Id == request.Id)
+                .Where(expenditure => 
+                    expenditure.Id == request.Id && 
+                    expenditure.UserId == userId)
                 .Include(x => x.Label)
                 .Select(expenditure => new ExpenditureResponse
                 {
@@ -45,7 +57,8 @@ public static class GetExpenditure
                 return Result.Failure<ExpenditureResponse>(
                     new Error(
                         "GetExpenditure.Null",
-                        "The expenditure with the specified ID was not found"));
+                        "The expenditure with the specified ID was not found",
+                        ErrorType.NotFound));
             }
 
             return expenditureResponse;
@@ -65,9 +78,7 @@ public class GetExpenditureEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(
-                onSuccess: (data) => Results.Ok(data),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

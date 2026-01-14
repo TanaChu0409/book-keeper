@@ -1,8 +1,9 @@
-﻿using BookKeeper.Api.ApiResults;
-using BookKeeper.Api.Contracts.Incomes;
+﻿using BookKeeper.Api.Contracts.Incomes;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Entities;
+using BookKeeper.Api.Extensions;
+using BookKeeper.Api.Services;
 using BookKeeper.Api.Shared;
 using FluentValidation;
 using FluentValidation.Results;
@@ -47,24 +48,37 @@ public static class UpdateIncome
 
     internal sealed class Handler(
         ApplicationDbContext dbContext,
-        IValidator<Command> validator)
+        IValidator<Command> validator,
+        UserContext userContext)
         : IRequestHandler<Command, Result>
     {
         public async Task<Result> Handle(
             Command request,
             CancellationToken cancellationToken)
         {
+            string? userId = await userContext.GetUserIdAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Result.Failure(
+                    new Error(
+                        "UpdateIncome.Unauthorized",
+                        "User is not authenticated.",
+                        ErrorType.Problem));
+            }
+
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
                 return Result.Failure(
                     new Error(
                         "UpdateIncome.Validation",
-                        validationResult.ToString()));
+                        validationResult.ToString(),
+                        ErrorType.Validation));
             }
 
             Income? income = await dbContext.Incomes.FirstOrDefaultAsync(
-                x => x.Id == request.IncomeId,
+                x => x.Id == request.IncomeId &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (income is null)
@@ -72,21 +86,23 @@ public static class UpdateIncome
                 return Result.Failure(
                     new Error(
                         "UpdateIncome.IncomeNotFound",
-                        $"Income with ID '{request.IncomeId}' was not found."));
+                        $"Income with ID '{request.IncomeId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             Label? label = await dbContext.Labels.FirstOrDefaultAsync(
-                x =>
-                    x.Id == request.LabelId &&
-                    !x.IsDeleted,
+                x => x.Id == request.LabelId &&
+                     !x.IsDeleted &&
+                     x.UserId == userId,
                 cancellationToken);
 
             if (label is null)
             {
                 return Result.Failure<string>(
                     new Error(
-                        "UpdateExpenditure.LabelNotFound",
-                        $"Label with ID '{request.LabelId}' was not found."));
+                        "UpdateIncome.LabelNotFound",
+                        $"Label with ID '{request.LabelId}' was not found.",
+                        ErrorType.NotFound));
             }
 
             income.Update(
@@ -121,9 +137,7 @@ public class UpdateIncomeEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(
-                onSuccess: () => Results.NoContent(),
-                onFailure: (error) => Results.BadRequest(error));
+            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

@@ -1,6 +1,6 @@
 ﻿using BookKeeper.Api.Shared;
 
-namespace BookKeeper.Api.ApiResults;
+namespace BookKeeper.Api.Extensions;
 
 public static class ResultExtensions
 {
