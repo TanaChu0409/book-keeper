@@ -37,7 +37,7 @@ public static class DeleteExpenditure
             string? userId = await userContext.GetUserIdAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(userId))
             {
-                return Result.Failure<string>(
+                return Result.Failure(
                     new Error(
                         "DeleteExpenditure.Unauthorized",
                         "User is not authenticated.",
@@ -47,7 +47,7 @@ public static class DeleteExpenditure
             ValidationResult validationResult = await validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
-                return Result.Failure<string>(
+                return Result.Failure(
                     new Error(
                         "DeleteExpenditure.Validation",
                         validationResult.ToString(),
