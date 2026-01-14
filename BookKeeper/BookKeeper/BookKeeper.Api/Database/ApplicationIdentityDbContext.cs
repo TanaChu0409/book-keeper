@@ -14,7 +14,7 @@ public sealed class ApplicationIdentityDbContext(DbContextOptions<ApplicationIde
     {
         base.OnModelCreating(builder);
 
-        builder.HasDefaultSchema(Schemas.Application);
+        builder.HasDefaultSchema(Schemas.Identity);
         builder.Entity<IdentityUser>().ToTable("asp_net_users");
         builder.Entity<IdentityRole>().ToTable("asp_net_roles");
         builder.Entity<IdentityUserRole<string>>().ToTable("asp_net_user_roles");
