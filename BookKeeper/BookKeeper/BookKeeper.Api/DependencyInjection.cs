@@ -160,9 +160,9 @@ public static class DependencyInjection
     {
         builder.Services.AddQuartz(configurator =>
         {
-            var scheduler = Guid.NewGuid();
-            configurator.SchedulerId = $"default-id-{scheduler}";
-            configurator.SchedulerName = $"default-name-{scheduler}";
+            var schedulerId = Guid.NewGuid();
+            configurator.SchedulerId = $"default-id-{schedulerId}";
+            configurator.SchedulerName = $"default-name-{schedulerId}";
         });
 
         builder.Services.AddQuartzHostedService(options =>
