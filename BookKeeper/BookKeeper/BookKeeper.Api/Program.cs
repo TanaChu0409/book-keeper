@@ -6,9 +6,10 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddApiService()
     .AddMediaR()
+    .AddQuartz()
     .AddErrorHandling()
     .AddDatabase()
-    .AddObservability() 
+    .AddObservability()
     .AddApplicationServices()
     .AddAuthenticationService();
 
