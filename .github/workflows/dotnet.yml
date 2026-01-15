@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - "**"
 
 env:
   DOTNET_VERSION: "8.x"
@@ -35,4 +35,5 @@ jobs:
         run: dotnet test BookKeeper.sln --configuration Release --no-restore --no-build
 
       - name: Publish
+        if: github.ref == 'refs/heads/main'
         run: dotnet publish BookKeeper.sln --configuration Release --no-restore --no-build
