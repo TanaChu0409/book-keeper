@@ -10,6 +10,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Income> Incomes { set; get; }
     public DbSet<Label> Labels { set; get; }
     public DbSet<User> Users { set; get; }
+    public DbSet<StatisticOfDate> StatisticsOfDates { set; get; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schemas.Application);

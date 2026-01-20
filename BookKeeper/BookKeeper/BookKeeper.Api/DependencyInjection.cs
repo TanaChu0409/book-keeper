@@ -20,6 +20,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Quartz;
+using static BookKeeper.Api.Features.Statistics.CreateStatisticOfDate;
 
 namespace BookKeeper.Api;
 
@@ -169,6 +170,8 @@ public static class DependencyInjection
         {
             options.WaitForJobsToComplete = true;
         });
+
+        builder.Services.ConfigureOptions<ConfigureCreateStatisticOfDateJob>();
 
         return builder;
     }

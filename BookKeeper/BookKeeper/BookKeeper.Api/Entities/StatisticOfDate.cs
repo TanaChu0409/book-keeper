@@ -27,4 +27,11 @@ public class StatisticOfDate
             SumAmount = totalIncomeAmount - totalExpendAmount,
             UserId = userId
         };
+
+    public void UpdateAmounts(decimal totalExpendAmount, decimal totalIncomeAmount)
+    {
+        TotalExpendAmount = totalExpendAmount;
+        TotalIncomeAmount = totalIncomeAmount;
+        SumAmount = totalIncomeAmount - totalExpendAmount;
+    }
 }

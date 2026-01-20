@@ -1,6 +1,6 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.3.0 | **最後更新**: 2026-01-20 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
@@ -80,6 +80,7 @@
 | 2026-01-06 | #008 | Snake_case 資料庫命名 | PostgreSQL 慣例、可讀性、自動轉換 | `EFCore.NamingConventions` 套件 |
 | 2026-01-08 | #009 | 重建 my-ai-swarm 記憶系統 | 符合 copilot-instructions.md 標準、建立決策追蹤機制、支援 Workflow 協作 | `my-ai-swarm/` 全目錄結構 |
 | 2026-01-12 | #010 | 新增 Auth Register/Login/Refresh | 補齊 JWT 認證流程：新增 Register/Login/Refresh 三個端點，註冊時建立 Identity + Domain User 並預設 Member 角色，登入檢驗帳密並回傳 access/refresh tokens。Refresh Token 採單一活躍策略，簽發前清除舊 token，過期或無效即刪除，避免多重 session 安全風險；沿用 Identity 預設密碼策略，使用 TokenProvider + JwtAuthOptions 控管到期時間，讓後續 API 透過 Authorization header 與 UserContext 能正確解析 Domain User。 | `Features/Auth/*`, `Contracts/Auth/*`, `Tags.cs`, `my-ai-swarm/*` |
+| 2026-01-20 | #011 | 強制遵守 .editorconfig 規則 | 新增/更新程式碼時必須先讀取並遵守專案 `.editorconfig` 規範，確保代碼風格一致性。關鍵規則：(1) File-scoped namespace；(2) Using directives 置於 namespace 外；(3) 不使用 `this.` 前綴；(4) 除非類型明顯否則不使用 `var`；(5) 必須使用大括號；(6) Accessors/Properties/Operators 使用 expression body，Methods/Constructors 使用 block body；(7) 所有大括號前換行；(8) 4 空格縮排、CRLF、UTF-8 BOM。此規則適用於所有 C# 檔案修改作業。 | 所有 `BookKeeper.Api/**/*.cs` 檔案 |
 
 ---
 
