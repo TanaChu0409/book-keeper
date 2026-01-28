@@ -1,6 +1,6 @@
 # BookKeeper - Service Memory (服務清單)
 
-> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
+> **版本**: v1.3.0 | **最後更新**: 2026-01-28 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
 
 ---
 
@@ -17,6 +17,8 @@
 | **Label** | `l_` | [Entities/Label.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Label.cs) | `application` | 收入/支出分類標籤 |
 | **Income** | `i_` | [Entities/Income.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Income.cs) | `application` | 收入記錄 |
 | **Expenditure** | `e_` | [Entities/Expenditure.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Expenditure.cs) | `application` | 支出記錄 |
+| **StatisticOfDate** | `sod_` | [Entities/StatisticOfDate.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfDate.cs) | `application` | 每日統計（每用戶每日的總收支） |
+| **StatisticOfMonth** | `som_` | [Entities/StatisticOfMonth.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfMonth.cs) | `application` | 每月統計（每用戶每月的總收支） |
 | **User** | - | [Entities/User.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/User.cs) | `identity` | ASP.NET Identity 用戶 |
 | **RefreshToken** | - | [Entities/RefreshToken.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/RefreshToken.cs) | `identity` | JWT Refresh Token |
 
@@ -501,7 +503,75 @@ DateTimeProvider
 
 > **注意**: 專案中錯誤定義尚未統一至 `Shared/Errors/` 資料夾，建議未來重構時統一管理。
 
+---� Statistics (統計功能)
+
+### Background Jobs 清單
+
+| Job | 排程 | Handler | 用途 |
+|-----|------|---------|------|
+| **ProcessStatisticOfDate** | 每日 03:00 | `CreateStatisticOfDate.ProcessStatisticOfDate` | 統計每位用戶當日的總收入與總支出，寫入 `StatisticsOfDates` 表 |
+| **ProcessStatisticOfMonth** | 每月 1 日 03:00 | `CreateStatisticOfMonth.ProcessStatisticOfMonth` | 統計每位用戶上個月的總收入與總支出，寫入 `StatisticsOfMonths` 表 |
+
+### 檔案結構
+
+```
+Features/Statistics/
+├── CreateStatisticOfDate.cs   # 每日統計 Job (每日 03:00 執行)
+└── CreateStatisticOfMonth.cs  # 每月統計 Job (每月 1 日 03:00 執行)
+```
+
+### Job 詳細規格
+
+#### 1. ProcessStatisticOfDate (每日統計)
+
+**排程**: 每日凌晨 3:00 執行  
+**排程方式**: `WithDailyTimeIntervalSchedule` + `OnEveryDay().StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(3, 0))`  
+**統計範圍**: 當天 (`DateOnly.FromDateTime(DateTime.UtcNow)`)  
+**資料來源**: `Incomes` + `Expenditures`  
+**處理邏輯**:
+- GroupBy `UserId` 聚合當天的 `Incomes` 與 `Expenditures`
+- 遍歷所有 Users，計算每位用戶的 `TotalIncomeAmount` 與 `TotalExpendAmount`
+- 支援 Upsert：若該用戶當天已有記錄則更新，否則建立新記錄
+- 計算 `SumAmount = TotalIncomeAmount - TotalExpendAmount`
+
+**輸出實體**: `StatisticOfDate` (ID 前綴 `sod_`)  
+**唯一索引**: `(UserId, DateOnUtc)`
+
+#### 2. ProcessStatisticOfMonth (每月統計)
+
+**排程**: 每月 1 日凌晨 3:00 執行  
+**排程方式**: `WithCronSchedule("0 0 3 1 * ?")`  
+**統計範圍**: 上個月 (`DateTime.UtcNow.AddMonths(-1)`)  
+**資料來源**: `Incomes` + `Expenditures`（直接查詢，不依賴 StatisticsOfDates）  
+| v1.3.0 | 2026-01-28 | 新增 Statistics 區塊，記錄 ProcessStatisticOfDate 與 ProcessStatisticOfMonth 背景任務，新增實體 StatisticOfDate/StatisticOfMonth |
+
 ---
+
+**最後更新**: 2026-01-28alIncome > 0 || totalExpend > 0`），無交易則不寫入
+- 支援 Upsert：若該用戶當月已有記錄則更新，否則建立新記錄
+- 計算 `SumAmount = TotalIncomeAmount - TotalExpendAmount`
+
+**輸出實體**: `StatisticOfMonth` (ID 前綴 `som_`)  
+**唯一索引**: `(UserId, Year, Month)`
+
+### 設計決策
+
+| 決策點 | StatisticOfDate | StatisticOfMonth |
+|--------|-----------------|------------------|
+| **統計維度** | 按日（DateOnly） | 按月（int Year + int Month） |
+| **零值記錄** | 寫入所有用戶（含零值） | 僅寫入有交易的用戶 |
+| **排程頻率** | 每日 03:00 | 每月 1 日 03:00 |
+| **資料來源** | Incomes + Expenditures（原始資料） | Incomes + Expenditures（原始資料，不依賴 StatisticsOfDates） |
+| **Upsert 支援** | ✅ 支援 | ✅ 支援 |
+
+**備註**:
+- 兩個 Job 皆使用 `[DisallowConcurrentExecution]` 避免並發執行
+- 查詢使用 `GroupBy` + `Sum` 聚合，效能依賴於資料庫索引（`UserId`、日期欄位）
+- 月度統計選擇從原始資料計算而非依賴每日統計，確保獨立性與容錯性
+
+---
+
+## �
 
 ## 🔧 Validators 清單
 

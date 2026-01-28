@@ -11,6 +11,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Label> Labels { set; get; }
     public DbSet<User> Users { set; get; }
     public DbSet<StatisticOfDate> StatisticsOfDates { set; get; }
+    public DbSet<StatisticOfMonth> StatisticsOfMonths { set; get; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schemas.Application);
