@@ -1,6 +1,6 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.4.0 | **最後更新**: 2026-01-28 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.4.1 | **最後更新**: 2026-01-28 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
@@ -82,6 +82,7 @@
 | 2026-01-12 | #010 | 新增 Auth Register/Login/Refresh | 補齊 JWT 認證流程：新增 Register/Login/Refresh 三個端點，註冊時建立 Identity + Domain User 並預設 Member 角色，登入檢驗帳密並回傳 access/refresh tokens。Refresh Token 採單一活躍策略，簽發前清除舊 token，過期或無效即刪除，避免多重 session 安全風險；沿用 Identity 預設密碼策略，使用 TokenProvider + JwtAuthOptions 控管到期時間，讓後續 API 透過 Authorization header 與 UserContext 能正確解析 Domain User。 | `Features/Auth/*`, `Contracts/Auth/*`, `Tags.cs`, `my-ai-swarm/*` |
 | 2026-01-20 | #011 | 強制遵守 .editorconfig 規則 | 新增/更新程式碼時必須先讀取並遵守專案 `.editorconfig` 規範，確保代碼風格一致性。關鍵規則：(1) File-scoped namespace；(2) Using directives 置於 namespace 外；(3) 不使用 `this.` 前綴；(4) 除非類型明顯否則不使用 `var`；(5) 必須使用大括號；(6) Accessors/Properties/Operators 使用 expression body，Methods/Constructors 使用 block body；(7) 所有大括號前換行；(8) 4 空格縮排、CRLF、UTF-8 BOM。此規則適用於所有 C# 檔案修改作業。 | 所有 `BookKeeper.Api/**/*.cs` 檔案 |
 | 2026-01-28 | #012 | 新增月度統計背景任務 StatisticOfMonth | 建立每月執行的 Quartz 背景任務，於每月 1 日凌晨 3:00 統計上個月所有用戶的收入與支出總額。Entity 使用 `int Year` + `int Month` 欄位（而非 DateOnly）以簡化查詢與聚合；遍歷所有 Users，從 `Incomes`/`Expenditures` 直接聚合（不依賴 StatisticsOfDates），僅記錄有交易的用戶（totalIncome > 0 或 totalExpend > 0），支援 Upsert 邏輯（查詢現有記錄並更新或建立新記錄）。排程使用 Cron 表達式 `0 0 3 1 * ?`，Job 類別為 `ProcessStatisticOfMonth`，註冊於 `DependencyInjection.AddQuartz()`。ID 前綴使用 `som_` 對稱 `sod_`，唯一索引為 `(UserId, Year, Month)`。 | `Entities/StatisticOfMonth.cs`, `Database/Configurations/StatisticOfMonthConfiguration.cs`, `Features/Statistics/CreateStatisticOfMonth.cs`, `ApplicationDbContext.cs`, `DependencyInjection.cs` |
+| 2026-01-28 | #013 | 強制所有檔案使用 CRLF 換行符 | 統一專案內所有文本文件（包含 `.cs`, `.json`, `.md`, `.yml` 等）使用 CRLF (Windows) 作為行尾符 (End of Line)。專案已配置 `.editorconfig` 設定 `end_of_line = crlf`，確保 VS Code/Visual Studio/Rider 等編輯器遵守此規範。AI Copilot 在產生或修改任何檔案時，必須使用 CRLF 換行符，避免混用 LF 導致版本控制衝突。此為 Windows 開發環境標準慣例，所有新建/編輯檔案均需遵守。 | 所有專案文本檔案，`.editorconfig` 第 14 行 |
 
 ---
 
