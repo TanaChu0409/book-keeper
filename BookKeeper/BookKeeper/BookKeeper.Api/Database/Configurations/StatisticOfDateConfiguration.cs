@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookKeeper.Api.Database.Configurations;
 
-internal sealed class StatisitcOfDateConfiguration : IEntityTypeConfiguration<StatisticOfDate>
+internal sealed class StatisticOfDateConfiguration : IEntityTypeConfiguration<StatisticOfDate>
 {
     public void Configure(EntityTypeBuilder<StatisticOfDate> builder)
     {
