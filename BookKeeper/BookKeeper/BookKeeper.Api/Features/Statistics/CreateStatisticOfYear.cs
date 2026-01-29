@@ -115,7 +115,7 @@ public static class CreateStatisticOfYear
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 4 2 1 ?"));
+                        .WithCronSchedule("0 0 3 1 1 ?"));
         }
     }
 }
