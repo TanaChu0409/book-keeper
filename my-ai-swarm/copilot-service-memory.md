@@ -543,11 +543,9 @@ Features/Statistics/
 **排程方式**: `WithCronSchedule("0 0 3 1 * ?")`  
 **統計範圍**: 上個月 (`DateTime.UtcNow.AddMonths(-1)`)  
 **資料來源**: `Incomes` + `Expenditures`（直接查詢，不依賴 StatisticsOfDates）  
-| v1.3.0 | 2026-01-28 | 新增 Statistics 區塊，記錄 ProcessStatisticOfDate 與 ProcessStatisticOfMonth 背景任務，新增實體 StatisticOfDate/StatisticOfMonth |
 
----
-
-**最後更新**: 2026-01-28alIncome > 0 || totalExpend > 0`），無交易則不寫入
+**處理邏輯**：
+- 僅在有交易時寫入 (`totalIncome > 0 || totalExpend > 0`），無交易則不寫入
 - 支援 Upsert：若該用戶當月已有記錄則更新，否則建立新記錄
 - 計算 `SumAmount = TotalIncomeAmount - TotalExpendAmount`
 
