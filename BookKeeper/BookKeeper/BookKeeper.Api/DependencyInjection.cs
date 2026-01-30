@@ -20,6 +20,10 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Quartz;
+using static BookKeeper.Api.Features.Statistics.CreateStatisticOfDate;
+using static BookKeeper.Api.Features.Statistics.CreateStatisticOfMonth;
+using static BookKeeper.Api.Features.Statistics.CreateStatisticOfWeek;
+using static BookKeeper.Api.Features.Statistics.CreateStatisticOfYear;
 
 namespace BookKeeper.Api;
 
@@ -169,6 +173,11 @@ public static class DependencyInjection
         {
             options.WaitForJobsToComplete = true;
         });
+
+        builder.Services.ConfigureOptions<ConfigureCreateStatisticOfDateJob>();
+        builder.Services.ConfigureOptions<ConfigureCreateStatisticOfMonthJob>();
+        builder.Services.ConfigureOptions<ConfigureCreateStatisticOfWeekJob>();
+        builder.Services.ConfigureOptions<ConfigureCreateStatisticOfYearJob>();
 
         return builder;
     }

@@ -3,6 +3,7 @@ using System;
 using BookKeeper.Api.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookKeeper.Api.Migrations.Application
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260120062159_AddStatisticOfDate")]
+    partial class AddStatisticOfDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,144 +209,6 @@ namespace BookKeeper.Api.Migrations.Application
                         .HasDatabaseName("ix_statistics_of_date_user_id_date_on_utc");
 
                     b.ToTable("statistics_of_dates", "bookkeeper");
-                });
-
-            modelBuilder.Entity("BookKeeper.Api.Entities.StatisticOfMonth", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer")
-                        .HasColumnName("month");
-
-                    b.Property<decimal>("SumAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("sum_amount");
-
-                    b.Property<decimal>("TotalExpendAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_expend_amount");
-
-                    b.Property<decimal>("TotalIncomeAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_income_amount");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("integer")
-                        .HasColumnName("year");
-
-                    b.HasKey("Id")
-                        .HasName("pk_statistics_of_months");
-
-                    b.HasIndex("UserId", "Year", "Month")
-                        .IsUnique()
-                        .HasDatabaseName("ix_statistics_of_month_user_id_year_month");
-
-                    b.ToTable("statistics_of_months", "bookkeeper");
-                });
-
-            modelBuilder.Entity("BookKeeper.Api.Entities.StatisticOfWeek", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("integer")
-                        .HasColumnName("month");
-
-                    b.Property<decimal>("SumAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("sum_amount");
-
-                    b.Property<decimal>("TotalExpendAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_expend_amount");
-
-                    b.Property<decimal>("TotalIncomeAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_income_amount");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("WeekOfMonth")
-                        .HasColumnType("integer")
-                        .HasColumnName("week_of_month");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("integer")
-                        .HasColumnName("year");
-
-                    b.HasKey("Id")
-                        .HasName("pk_statistics_of_weeks");
-
-                    b.HasIndex("UserId", "Year", "Month", "WeekOfMonth")
-                        .IsUnique()
-                        .HasDatabaseName("ix_statistics_of_week_user_id_year_month_week");
-
-                    b.ToTable("statistics_of_weeks", "bookkeeper");
-                });
-
-            modelBuilder.Entity("BookKeeper.Api.Entities.StatisticOfYear", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("id");
-
-                    b.Property<decimal>("SumAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("sum_amount");
-
-                    b.Property<decimal>("TotalExpendAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_expend_amount");
-
-                    b.Property<decimal>("TotalIncomeAmount")
-                        .HasPrecision(18)
-                        .HasColumnType("numeric(18,0)")
-                        .HasColumnName("total_income_amount");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("integer")
-                        .HasColumnName("year");
-
-                    b.HasKey("Id")
-                        .HasName("pk_statistics_of_years");
-
-                    b.HasIndex("UserId", "Year")
-                        .IsUnique()
-                        .HasDatabaseName("ix_statistics_of_year_user_id_year");
-
-                    b.ToTable("statistics_of_years", "bookkeeper");
                 });
 
             modelBuilder.Entity("BookKeeper.Api.Entities.User", b =>

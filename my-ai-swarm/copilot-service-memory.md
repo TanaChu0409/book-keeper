@@ -1,6 +1,6 @@
 # BookKeeper - Service Memory (服務清單)
 
-> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
+> **版本**: v1.4.0 | **最後更新**: 2026-01-30 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
 
 ---
 
@@ -17,6 +17,10 @@
 | **Label** | `l_` | [Entities/Label.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Label.cs) | `application` | 收入/支出分類標籤 |
 | **Income** | `i_` | [Entities/Income.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Income.cs) | `application` | 收入記錄 |
 | **Expenditure** | `e_` | [Entities/Expenditure.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/Expenditure.cs) | `application` | 支出記錄 |
+| **StatisticOfDate** | `sod_` | [Entities/StatisticOfDate.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfDate.cs) | `application` | 每日統計（每用戶每日的總收支） |
+| **StatisticOfWeek** | `sow_` | [Entities/StatisticOfWeek.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfWeek.cs) | `application` | 每週統計（每用戶每週的總收支） |
+| **StatisticOfMonth** | `som_` | [Entities/StatisticOfMonth.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfMonth.cs) | `application` | 每月統計（每用戶每月的總收支） |
+| **StatisticOfYear** | `soy_` | [Entities/StatisticOfYear.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/StatisticOfYear.cs) | `application` | 每年統計（每用戶每年的總收支） |
 | **User** | - | [Entities/User.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/User.cs) | `identity` | ASP.NET Identity 用戶 |
 | **RefreshToken** | - | [Entities/RefreshToken.cs](../BookKeeper/BookKeeper/BookKeeper.Api/Entities/RefreshToken.cs) | `identity` | JWT Refresh Token |
 
@@ -503,6 +507,102 @@ DateTimeProvider
 
 ---
 
+## 📊 Statistics (統計功能)
+
+### Background Jobs 清單
+
+| Job | 排程 (Taiwan Time) | Handler | 用途 |
+|-----|-------------------|---------|------|
+| **ProcessStatisticOfDate** | 每日 03:00 | `CreateStatisticOfDate.ProcessStatisticOfDate` | 統計每位用戶當日的總收入與總支出，寫入 `StatisticsOfDates` 表 |
+| **ProcessStatisticOfWeek** | 每週一 03:00 | `CreateStatisticOfWeek.ProcessStatisticOfWeek` | 統計每位用戶上週的總收入與總支出，寫入 `StatisticsOfWeeks` 表 |
+| **ProcessStatisticOfMonth** | 每月 1 日 03:00 | `CreateStatisticOfMonth.ProcessStatisticOfMonth` | 統計每位用戶上個月的總收入與總支出，寫入 `StatisticsOfMonths` 表 |
+| **ProcessStatisticOfYear** | 每年 1 月 1 日 03:00 | `CreateStatisticOfYear.ProcessStatisticOfYear` | 統計每位用戶上年度的總收入與總支出，寫入 `StatisticsOfYears` 表 |
+
+### 檔案結構
+
+```
+Features/Statistics/
+├── CreateStatisticOfDate.cs   # 每日統計 Job (每日 03:00 執行)
+├── CreateStatisticOfWeek.cs   # 每週統計 Job (每週一 03:00 執行)
+├── CreateStatisticOfMonth.cs  # 每月統計 Job (每月 1 日 03:00 執行)
+└── CreateStatisticOfYear.cs   # 每年統計 Job (每年 1 月 1 日 03:00 執行)
+```
+
+### Job 詳細規格
+
+#### 1. ProcessStatisticOfDate (每日統計)
+
+**排程**: 每日凌晨 3:00 (Taiwan Time)  
+**排程方式**: `WithDailyTimeIntervalSchedule` + `OnEveryDay().StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(19, 0))` (UTC 19:00 = Taiwan 03:00)  
+**統計範圍**: 昨天 (`TaipeiToday.AddDays(-1)`)  
+**處理邏輯**:
+- GroupBy `UserId` 聚合當天的 `Incomes` 與 `Expenditures`
+- 遍歷所有 Users，計算每位用戶的 `TotalIncomeAmount` 與 `TotalExpendAmount`
+- 寫入所有用戶（含零值），確保完整的日統計歷史
+- 支援 Upsert：若該用戶當天已有記錄則更新，否則建立新記錄
+
+**輸出實體**: `StatisticOfDate` (ID 前綴 `sod_`)  
+**唯一索引**: `(UserId, DateOnUtc)`
+
+#### 2. ProcessStatisticOfWeek (每週統計)
+
+**排程**: 每週一凌晨 3:00 (Taiwan Time)  
+**排程方式**: `WithCronSchedule("0 0 19 ? * SUN")` (UTC Sunday 19:00 = Taiwan Monday 03:00)  
+**統計範圍**: 上週（WeekStart ~ WeekEnd，從週一開始計算）  
+**處理邏輯**:
+- 計算上週的起止日期，判斷 Year, Month, WeekOfMonth
+- GroupBy `UserId` 聚合該週的 `Incomes` 與 `Expenditures`
+- 遍歷所有 Users，寫入所有用戶（含零值）
+- 支援 Upsert：若該用戶該週已有記錄則更新，否則建立新記錄
+
+**輸出實體**: `StatisticOfWeek` (ID 前綴 `sow_`)  
+**唯一索引**: `(UserId, Year, Month, WeekOfMonth)`
+
+#### 3. ProcessStatisticOfMonth (每月統計)
+
+**排程**: 每月 1 日凌晨 3:00 (Taiwan Time)  
+**排程方式**: `WithCronSchedule("0 0 19 1 * ?")` (UTC 19:00 on 1st = Taiwan 03:00 on 1st)  
+**統計範圍**: 上個月 (`TaipeiNow.AddMonths(-1)`)  
+**處理邏輯**：
+- 僅在有交易時寫入 (`totalIncome > 0 || totalExpend > 0`)
+- GroupBy `UserId` 聚合上個月的 `Incomes` 與 `Expenditures`
+- 支援 Upsert：若該用戶當月已有記錄則更新，否則建立新記錄
+
+**輸出實體**: `StatisticOfMonth` (ID 前綴 `som_`)  
+**唯一索引**: `(UserId, Year, Month)`
+
+#### 4. ProcessStatisticOfYear (每年統計)
+
+**排程**: 每年 1 月 1 日凌晨 3:00 (Taiwan Time)  
+**排程方式**: `WithCronSchedule("0 0 19 31 12 ?")` (UTC Dec 31 19:00 = Taiwan Jan 1 03:00)  
+**統計範圍**: 上一年度 (`TaipeiNow.Year - 1`)  
+**處理邏輯**：
+- 遍歷所有 Users，寫入所有用戶（含零值）
+- GroupBy `UserId` 聚合上一年度的 `Incomes` 與 `Expenditures`
+- 支援 Upsert：若該用戶該年度已有記錄則更新，否則建立新記錄
+
+**輸出實體**: `StatisticOfYear` (ID 前綴 `soy_`)  
+**唯一索引**: `(UserId, Year)`
+
+### 設計決策
+
+| 決策點 | StatisticOfDate | StatisticOfWeek | StatisticOfMonth | StatisticOfYear |
+|--------|-----------------|-----------------|------------------|-----------------|
+| **統計維度** | 按日（DateOnly） | 按週（Year+Month+WeekOfMonth） | 按月（Year+Month） | 按年（Year） |
+| **ID 前綴** | `sod_` | `sow_` | `som_` | `soy_` |
+| **唯一索引** | `(UserId, DateOnUtc)` | `(UserId, Year, Month, WeekOfMonth)` | `(UserId, Year, Month)` | `(UserId, Year)` |
+| **零值記錄** | 寫入所有用戶 | 寫入所有用戶 | 僅有交易用戶 | 寫入所有用戶 |
+| **排程頻率** | 每日 03:00 | 每週一 03:00 | 每月 1 日 03:00 | 每年 1/1 03:00 |
+| **Upsert 支援** | ✅ | ✅ | ✅ | ✅ |
+
+**備註**:
+- 所有 Job 皆使用 `[DisallowConcurrentExecution]` 避免並發執行
+- 查詢使用 `GroupBy` + `Sum` 聚合，效能依賴於資料庫索引（`UserId`、日期欄位）
+- 月度統計選擇從原始資料計算而非依賴每日統計，確保獨立性與容錯性
+- 所有統計 Job 皆使用台灣時區 (`TaipeiNow`/`TaipeiToday`) 作為時間基準
+
+---
+
 ## 🔧 Validators 清單
 
 | Feature | Validator | 主要規則 |
@@ -543,8 +643,10 @@ public class Validator : AbstractValidator<Command>
 | v1.0.0 | 2026-01-06 | 初始版本，記錄 Labels/Incomes/Expenditures 服務 |
 | v1.1.0 | 2026-01-08 | 完整重建，新增詳細 API 規格、Handler 依賴關係、錯誤類別清單 |
 | v1.2.0 | 2026-01-12 | 新增 Users 區塊，列出 GetCurrentUser / GetUserById 端點 (Admin 限制) |
+| v1.3.0 | 2026-01-28 | 新增 Statistics 區塊（StatisticOfDate、StatisticOfMonth）|
+| v1.4.0 | 2026-01-30 | 補齊 Statistics 四維度（新增 StatisticOfWeek、StatisticOfYear），修正編碼問題 |
 
 ---
 
-**最後更新**: 2026-01-12  
+**最後更新**: 2026-01-30  
 **維護者**: GitHub Copilot

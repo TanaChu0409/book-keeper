@@ -1,6 +1,6 @@
 # BookKeeper - Quick Reference (快速參考指南)
 
-> **版本**: v1.1.0 | **最後更新**: 2026-01-08 | **用途**: AI Agent 與開發者的快速查閱指南
+> **版本**: v1.2.0 | **最後更新**: 2026-01-30 | **用途**: AI Agent 與開發者的快速查閱指南
 
 ---
 
@@ -20,6 +20,7 @@
     ├─ 新增 Entity？ → 需要 Migration + Config（預估 1-2 週，流程 A）
     ├─ 修改 Entity？ → 需要 Migration（預估 3-5 天，流程 B）
     ├─ 僅業務邏輯？ → 快速實裝（預估 1-2 天，流程 C）
+    ├─ 新增背景任務？ → 需要 Quartz Job + DI 註冊（預估 3-5 天，流程 B）
     └─ 跨 Domain？ → 需要評估相依性（預估 1-2 週，流程 A）
 
 【第 3 步】工作流程選擇
@@ -79,8 +80,8 @@ docker exec -it bookkeeper.database psql -U postgres -d bookkeeper
 | **Handler** | `Handler` (巢狀 sealed) | `CreateExpenditure.Handler` | Feature 檔案內 |
 | **Validator** | `Validator` (巢狀) | `CreateExpenditure.Validator` | Feature 檔案內 |
 | **Endpoint** | `{Action}{Domain}Endpoint` | `CreateExpenditureEndpoint` | Feature 檔案內 |
-| **Entity** | `{Domain}` | `Expenditure`, `Label` | `Entities/` |
-| **Entity ID** | `{prefix}_{ULID}` | `e_01J9KT...`, `l_01J9KT...` | 生成於 `Create()` |
+| **Entity** | `{Domain}` | `Expenditure`, `Label`, `StatisticOfDate` | `Entities/` |
+| **Entity ID** | `{prefix}_{ULID}` | `e_01J9KT...`, `l_01J9KT...`, `sod_01J9KT...`, `sow_01J9KT...`, `som_01J9KT...`, `soy_01J9KT...` | 生成於 `Create()` |
 | **Request** | `{Action}{Domain}Request` | `CreateExpenditureRequest` | `Contracts/{Domain}/` |
 | **Response** | `{Domain}Response` | `ExpenditureResponse` | `Contracts/{Domain}/` |
 | **Error** | `{Domain}Errors` | `LabelErrors` | `Shared/Errors/` |
@@ -548,6 +549,19 @@ Task 4: 新增完整的 Category CRUD（綜合練習）
 
 ---
 
+## � Statistics Entity ID 前綴速查
+
+| Entity | ID 前綴 | 唯一索引 | 排程時間 | 零值策略 |
+|--------|---------|----------|----------|----------|
+| `StatisticOfDate` | `sod_` | `(UserId, DateOnUtc)` | 每日 03:00 | 寫入所有用戶 |
+| `StatisticOfWeek` | `sow_` | `(UserId, Year, Month, WeekOfMonth)` | 每週一 03:00 | 寫入所有用戶 |
+| `StatisticOfMonth` | `som_` | `(UserId, Year, Month)` | 每月 1 日 03:00 | 僅有交易用戶 |
+| `StatisticOfYear` | `soy_` | `(UserId, Year)` | 每年 1/1 03:00 | 寫入所有用戶 |
+
+> **注意**: 所有時間皆為台灣時區 (UTC+8)，使用 `TaipeiNow`/`TaipeiToday` 計算統計邊界。
+
+---
+
 ## 🔗 外部資源
 
 ### **官方文檔**
@@ -555,6 +569,7 @@ Task 4: 新增完整的 Category CRUD（綜合練習）
 - [EF Core 8 文檔](https://learn.microsoft.com/en-us/ef/core/)
 - [MediatR GitHub](https://github.com/jbogard/MediatR)
 - [FluentValidation 文檔](https://docs.fluentvalidation.net/)
+- [Quartz.NET 文檔](https://www.quartz-scheduler.net/documentation/)
 
 ### **學習資源**
 - [Vertical Slice Architecture](https://jimmybogard.com/vertical-slice-architecture/)
@@ -563,4 +578,4 @@ Task 4: 新增完整的 Category CRUD（綜合練習）
 
 ---
 
-**最後更新**: 2026-01-06 by AI Infrastructure Team
+**最後更新**: 2026-01-30 by GitHub Copilot

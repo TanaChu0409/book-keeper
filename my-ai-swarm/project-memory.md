@@ -1,6 +1,6 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.2.0 | **最後更新**: 2026-01-12 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.5.0 | **最後更新**: 2026-01-30 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
@@ -33,10 +33,12 @@
 | **資料庫驅動** | Npgsql | 8.0.11 | PostgreSQL 提供者 |
 | **CQRS** | MediatR | 12.5.0 | Command/Query 分離 |
 | **驗證** | FluentValidation | 12.0.0 | 請求驗證 |
+| **排程** | Quartz.NET | - | 背景任務排程（統計 Job） |
 | **可觀測性** | OpenTelemetry | 1.13.1 | Traces/Metrics/Logs |
-| **ID 生成** | Ulid | 1.4.1 | 分散式 ID (`l_`/`i_`/`e_` 前綴) |
+| **ID 生成** | Ulid | 1.4.1 | 分散式 ID (`l_`/`i_`/`e_`/`sod_`/`sow_`/`som_`/`soy_` 前綴) |
 | **API 文檔** | Swashbuckle | 9.0.6 | Swagger/OpenAPI |
 | **認證** | ASP.NET Identity | 8.0.21 | JWT 認證（已配置） |
+| **時間處理** | DateTimeProvider | - | 台灣時區支援 (`TaipeiNow`/`TaipeiToday`) |
 
 ### 架構特點
 
@@ -45,6 +47,7 @@
 3. **Result Pattern** - 函數式錯誤處理，避免異常作為流程控制
 4. **Rich Domain Model** - 實體封裝業務邏輯，私有建構函式 + 靜態工廠方法
 5. **Minimal API + IEndpoint** - 自動探索註冊端點，減少樣板代碼
+6. **台灣時區處理** - 統計任務使用 UTC+8 時區邊界計算
 
 ### 核心功能領域
 
@@ -53,6 +56,10 @@
 | **Labels** | `Label` | `l_` | 收入/支出分類標籤管理 (CRUD + 軟刪除) |
 | **Incomes** | `Income` | `i_` | 收入記錄追蹤 (CRUD + 分頁查詢) |
 | **Expenditures** | `Expenditure` | `e_` | 支出記錄追蹤 (CRUD + 分頁查詢) |
+| **Statistics** | `StatisticOfDate` | `sod_` | 每日統計（每用戶每日總收支） |
+| **Statistics** | `StatisticOfWeek` | `sow_` | 每週統計（每用戶每週總收支） |
+| **Statistics** | `StatisticOfMonth` | `som_` | 每月統計（每用戶每月總收支） |
+| **Statistics** | `StatisticOfYear` | `soy_` | 每年統計（每用戶每年總收支） |
 
 ---
 
@@ -80,6 +87,10 @@
 | 2026-01-06 | #008 | Snake_case 資料庫命名 | PostgreSQL 慣例、可讀性、自動轉換 | `EFCore.NamingConventions` 套件 |
 | 2026-01-08 | #009 | 重建 my-ai-swarm 記憶系統 | 符合 copilot-instructions.md 標準、建立決策追蹤機制、支援 Workflow 協作 | `my-ai-swarm/` 全目錄結構 |
 | 2026-01-12 | #010 | 新增 Auth Register/Login/Refresh | 補齊 JWT 認證流程：新增 Register/Login/Refresh 三個端點，註冊時建立 Identity + Domain User 並預設 Member 角色，登入檢驗帳密並回傳 access/refresh tokens。Refresh Token 採單一活躍策略，簽發前清除舊 token，過期或無效即刪除，避免多重 session 安全風險；沿用 Identity 預設密碼策略，使用 TokenProvider + JwtAuthOptions 控管到期時間，讓後續 API 透過 Authorization header 與 UserContext 能正確解析 Domain User。 | `Features/Auth/*`, `Contracts/Auth/*`, `Tags.cs`, `my-ai-swarm/*` |
+| 2026-01-20 | #011 | 強制遵守 .editorconfig 規則 | 新增/更新程式碼時必須先讀取並遵守專案 `.editorconfig` 規範，確保代碼風格一致性。關鍵規則：(1) File-scoped namespace；(2) Using directives 置於 namespace 外；(3) 不使用 `this.` 前綴；(4) 除非類型明顯否則不使用 `var`；(5) 必須使用大括號；(6) Accessors/Properties/Operators 使用 expression body，Methods/Constructors 使用 block body；(7) 所有大括號前換行；(8) 4 空格縮排、CRLF、UTF-8 BOM。此規則適用於所有 C# 檔案修改作業。 | 所有 `BookKeeper.Api/**/*.cs` 檔案 |
+| 2026-01-28 | #012 | 建立四維度統計背景任務系統 | 建立日/週/月/年四種統計任務，使用 Quartz 排程執行於台灣時間凌晨 3:00。Entity ID 前綴：`sod_`(日)、`sow_`(週)、`som_`(月)、`soy_`(年)。零值策略：Daily/Weekly 寫入所有用戶（含零值保證完整歷史），Monthly 僅記錄有交易用戶。唯一索引設計：Date 為 `(UserId, DateOnUtc)`，Week 為 `(UserId, Year, Month, WeekOfMonth)`，Month 為 `(UserId, Year, Month)`，Year 為 `(UserId, Year)`。所有 Job 支援 Upsert 更新邏輯與 `[DisallowConcurrentExecution]` 避免並發。 | `Entities/StatisticOf*.cs`, `Database/Configurations/StatisticOf*Configuration.cs`, `Features/Statistics/CreateStatisticOf*.cs`, `ApplicationDbContext.cs`, `DependencyInjection.cs` |
+| 2026-01-28 | #013 | 強制所有檔案使用 CRLF 換行符 | 統一專案內所有文本文件（包含 `.cs`, `.json`, `.md`, `.yml` 等）使用 CRLF (Windows) 作為行尾符 (End of Line)。專案已配置 `.editorconfig` 設定 `end_of_line = crlf`，確保 VS Code/Visual Studio/Rider 等編輯器遵守此規範。AI Copilot 在產生或修改任何檔案時，必須使用 CRLF 換行符，避免混用 LF 導致版本控制衝突。此為 Windows 開發環境標準慣例，所有新建/編輯檔案均需遵守。 | 所有專案文本檔案，`.editorconfig` 第 14 行 |
+| 2026-01-30 | #014 | 台灣時區統一處理 | DateTimeProvider 新增 `TaipeiNow`（DateTime）與 `TaipeiToday`（DateOnly）屬性，統一使用台灣時區 (UTC+8) 進行日期切分與統計邊界判斷。跨平台支援：Windows 使用 "Taipei Standard Time"，Linux/Docker 使用 "Asia/Taipei" IANA 時區 ID，找不到時 fallback 至 UTC。所有統計 Job 皆以台灣時間為基準計算統計範圍（如昨日、上週、上月、去年）。 | `Clock/DateTimeProvider.cs`, `Clock/IDateTimeProvider.cs`, `Features/Statistics/CreateStatisticOf*.cs` |
 
 ---
 
