@@ -117,7 +117,7 @@ public static class CreateStatisticOfMonth
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 16 L * ?"));  // UTC 16:00 on last day of month = Taiwan 00:00 on 1st of next month
+                        .WithCronSchedule("0 0 19 1 * ?"));  // UTC 19:00 on 1st day of month = Taiwan 03:00 on 1st day of month
         }
     }
 }

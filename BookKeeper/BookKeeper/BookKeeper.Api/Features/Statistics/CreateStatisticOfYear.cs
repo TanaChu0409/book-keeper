@@ -113,7 +113,7 @@ public static class CreateStatisticOfYear
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 16 31 12 ?"));  // UTC Dec 31 16:00 = Taiwan Jan 1 00:00
+                        .WithCronSchedule("0 0 19 31 12 ?"));  // UTC Dec 31 19:00 = Taiwan Jan 1
         }
     }
 }

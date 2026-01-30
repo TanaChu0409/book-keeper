@@ -133,16 +133,15 @@ public static class CreateStatisticOfWeek
         /// </summary>
         private static int GetWeekOfMonth(DateTime date)
         {
-            var firstDayOfMonth = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var utcDate = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            var firstDayOfMonth = new DateTime(utcDate.Year, utcDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             DateTime firstMondayOfMonth = GetStartOfWeek(firstDayOfMonth.AddDays(6));
-
             // 如果該日期在第一個完整週之前，屬於第 0 週（上月尾週）
-            if (date < firstMondayOfMonth)
+            if (utcDate < firstMondayOfMonth)
             {
                 return 0;
             }
-
-            int daysSinceFirstMonday = (date - firstMondayOfMonth).Days;
+            int daysSinceFirstMonday = (utcDate - firstMondayOfMonth).Days;
             return daysSinceFirstMonday / 7 + 1;
         }
     }
@@ -159,7 +158,7 @@ public static class CreateStatisticOfWeek
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 16 ? * SUN"));  // UTC Sunday 16:00 = Taiwan Monday 00:00
+                        .WithCronSchedule("0 0 19 ? * SUN"));  // UTC Sunday 19:00 = Taiwan Monday
         }
     }
 }

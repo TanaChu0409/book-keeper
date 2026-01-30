@@ -105,7 +105,7 @@ public static class CreateStatisticOfDate
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 16 * * ?"));  // UTC 16:00 = Taiwan 00:00 (midnight)
+                        .WithCronSchedule("0 0 19 * * ?"));  // UTC 19:00 = Taiwan 03:00
         }
     }
 }
