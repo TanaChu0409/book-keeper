@@ -20,7 +20,8 @@ public static class CreateStatisticOfYear
         {
             logger.LogInformation("Begin processing CreateStatisticOfYear");
 
-            int targetYear = dateTimeProvider.UtcNow.Year - 1;
+            // 使用台灣時區的去年來判斷年份邊界
+            int targetYear = dateTimeProvider.TaipeiNow.Year - 1;
 
             logger.LogInformation(
                 "Processing statistics for Year: {Year}",
@@ -68,22 +69,19 @@ public static class CreateStatisticOfYear
                 decimal totalIncome = incomeSumByUsers.GetValueOrDefault(userId, 0);
                 decimal totalExpend = expendSumByUsers.GetValueOrDefault(userId, 0);
 
-                if (totalIncome > 0 || totalExpend > 0)
+                if (existedStatistics.TryGetValue(userId, out StatisticOfYear? existedStatistic))
                 {
-                    if (existedStatistics.TryGetValue(userId, out StatisticOfYear? existedStatistic))
-                    {
-                        existedStatistic.UpdateAmounts(totalExpend, totalIncome);
-                    }
-                    else
-                    {
-                        var statisticOfYear = StatisticOfYear.Create(
-                            year: targetYear,
-                            totalExpendAmount: totalExpend,
-                            totalIncomeAmount: totalIncome,
-                            userId: userId);
+                    existedStatistic.UpdateAmounts(totalExpend, totalIncome);
+                }
+                else
+                {
+                    var statisticOfYear = StatisticOfYear.Create(
+                        year: targetYear,
+                        totalExpendAmount: totalExpend,
+                        totalIncomeAmount: totalIncome,
+                        userId: userId);
 
-                        statisticsToAdd.Add(statisticOfYear);
-                    }
+                    statisticsToAdd.Add(statisticOfYear);
                 }
             }
 
@@ -115,7 +113,7 @@ public static class CreateStatisticOfYear
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 3 1 1 ?"));
+                        .WithCronSchedule("0 0 16 31 12 ?"));  // UTC Dec 31 16:00 = Taiwan Jan 1 00:00
         }
     }
 }

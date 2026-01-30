@@ -21,8 +21,8 @@ public static class CreateStatisticOfWeek
         {
             logger.LogInformation("Begin processing CreateStatisticOfWeek");
 
-            // 處理上週資料
-            DateTime lastWeek = dateTimeProvider.UtcNow.AddDays(-7);
+            // 處理上週資料（使用台灣時區）
+            DateTime lastWeek = dateTimeProvider.TaipeiNow.AddDays(-7);
             DateTime weekStart = GetStartOfWeek(lastWeek);
             DateTime weekEnd = weekStart.AddDays(7).AddSeconds(-1);
 
@@ -159,9 +159,7 @@ public static class CreateStatisticOfWeek
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        // 每週一凌晨 2:00 執行（處理上週資料）
-                        // Cron: 秒 分 時 日 月 週
-                        .WithCronSchedule("0 0 2 ? * MON"));
+                        .WithCronSchedule("0 0 16 ? * SUN"));  // UTC Sunday 16:00 = Taiwan Monday 00:00
         }
     }
 }

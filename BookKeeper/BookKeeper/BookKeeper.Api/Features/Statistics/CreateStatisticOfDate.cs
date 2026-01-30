@@ -1,4 +1,5 @@
-﻿using BookKeeper.Api.Database;
+﻿using BookKeeper.Api.Clock;
+using BookKeeper.Api.Database;
 using BookKeeper.Api.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,7 @@ public static class CreateStatisticOfDate
     [DisallowConcurrentExecution]
     internal sealed class ProcessStatisticOfDate(
         ApplicationDbContext applicationDbContext,
+        IDateTimeProvider dateTimeProvider,
         ILogger<ProcessStatisticOfDate> logger)
         : IJob
     {
@@ -18,7 +20,8 @@ public static class CreateStatisticOfDate
         {
             logger.LogInformation("Begin processing CreateStatisticOfDate");
 
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            // 使用台灣時區的「今天」來判斷日期邊界
+            DateOnly today = dateTimeProvider.TaipeiToday;
 
             Dictionary<string, decimal> incomeSumByUsers = await applicationDbContext.Incomes
                 .Where(i => i.IncomeDateOnUtc == today)
@@ -102,10 +105,7 @@ public static class CreateStatisticOfDate
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithDailyTimeIntervalSchedule(schedule =>
-                            schedule
-                                .OnEveryDay()
-                                .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(3, 0))));
+                        .WithCronSchedule("0 0 16 * * ?"));  // UTC 16:00 = Taiwan 00:00 (midnight)
         }
     }
 }

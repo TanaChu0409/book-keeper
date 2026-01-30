@@ -20,7 +20,8 @@ public static class CreateStatisticOfMonth
         {
             logger.LogInformation("Begin processing CreateStatisticOfMonth");
 
-            DateTime lastMonth = dateTimeProvider.UtcNow.AddMonths(-1);
+            // 使用台灣時區的上月來判斷月份邊界
+            DateTime lastMonth = dateTimeProvider.TaipeiNow.AddMonths(-1);
             int targetYear = lastMonth.Year;
             int targetMonth = lastMonth.Month;
 
@@ -71,23 +72,20 @@ public static class CreateStatisticOfMonth
                 decimal totalIncome = incomeSumByUsers.GetValueOrDefault(userId, 0);
                 decimal totalExpend = expendSumByUsers.GetValueOrDefault(userId, 0);
 
-                if (totalIncome > 0 || totalExpend > 0)
+                if (existedStatistics.TryGetValue(userId, out StatisticOfMonth? existedStatistic))
                 {
-                    if (existedStatistics.TryGetValue(userId, out StatisticOfMonth? existedStatistic))
-                    {
-                        existedStatistic.UpdateAmounts(totalExpend, totalIncome);
-                    }
-                    else
-                    {
-                        var statisticOfMonth = StatisticOfMonth.Create(
-                            year: targetYear,
-                            month: targetMonth,
-                            totalExpendAmount: totalExpend,
-                            totalIncomeAmount: totalIncome,
-                            userId: userId);
+                    existedStatistic.UpdateAmounts(totalExpend, totalIncome);
+                }
+                else
+                {
+                    var statisticOfMonth = StatisticOfMonth.Create(
+                        year: targetYear,
+                        month: targetMonth,
+                        totalExpendAmount: totalExpend,
+                        totalIncomeAmount: totalIncome,
+                        userId: userId);
 
-                        statisticsToAdd.Add(statisticOfMonth);
-                    }
+                    statisticsToAdd.Add(statisticOfMonth);
                 }
             }
 
@@ -119,7 +117,7 @@ public static class CreateStatisticOfMonth
                 .AddTrigger(configure =>
                     configure
                         .ForJob(jobName)
-                        .WithCronSchedule("0 0 3 1 * ?"));
+                        .WithCronSchedule("0 0 16 L * ?"));  // UTC 16:00 on last day of month = Taiwan 00:00 on 1st of next month
         }
     }
 }
