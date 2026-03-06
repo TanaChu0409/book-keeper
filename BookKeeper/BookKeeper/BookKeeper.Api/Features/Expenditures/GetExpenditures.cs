@@ -82,7 +82,7 @@ public class GetExpendituresEndpoint : IEndpoint
                     Page = page ?? 1,
                     PageSize = pageSize ?? 10
                 });
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

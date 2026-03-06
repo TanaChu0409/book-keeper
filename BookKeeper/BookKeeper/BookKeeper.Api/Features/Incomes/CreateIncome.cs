@@ -117,7 +117,7 @@ public class CreateIncomeEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

@@ -65,7 +65,7 @@ public sealed class DeleteLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

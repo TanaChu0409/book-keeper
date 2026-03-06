@@ -137,7 +137,7 @@ public class UpdateIncomeEndpoint : IEndpoint
                     LabelId = request.LabelId
                 });
 
-            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

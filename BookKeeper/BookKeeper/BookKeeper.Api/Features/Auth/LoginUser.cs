@@ -152,7 +152,7 @@ public sealed class LoginUserEndpoint : IEndpoint
                     Password = request.Password
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .AllowAnonymous()
         .WithTags(Tags.Auth);
