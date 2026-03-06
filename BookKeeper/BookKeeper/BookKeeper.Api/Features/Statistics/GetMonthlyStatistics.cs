@@ -18,7 +18,7 @@ public static class GetMonthlyStatistics
     public class Query : IRequest<Result<PaginationResult<MonthlyStatisticResponse>>>
     {
         public int Year { get; set; }
-        public int Month { get; set; }
+        public int? Month { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
@@ -31,9 +31,12 @@ public static class GetMonthlyStatistics
                 .InclusiveBetween(1900, 2100)
                 .WithMessage("Year must be between 1900 and 2100.");
 
-            RuleFor(x => x.Month)
-                .InclusiveBetween(1, 12)
-                .WithMessage("Month must be between 1 and 12.");
+            When(x => x.Month.HasValue, () =>
+            {
+                RuleFor(x => x.Month!.Value)
+                    .InclusiveBetween(1, 12)
+                    .WithMessage("Month must be between 1 and 12.");
+            });
 
             RuleFor(x => x.Page)
                 .GreaterThanOrEqualTo(1)
@@ -77,7 +80,12 @@ public static class GetMonthlyStatistics
 
             IQueryable<StatisticOfMonth> query = dbContext.StatisticsOfMonths
                 .AsNoTracking()
-                .Where(s => s.UserId == userId && s.Year == request.Year && s.Month == request.Month);
+                .Where(s => s.UserId == userId && s.Year == request.Year);
+
+            if (request.Month.HasValue)
+            {
+                query = query.Where(s => s.Month == request.Month.Value);
+            }
 
             int totalCount = await query.CountAsync(cancellationToken);
 
