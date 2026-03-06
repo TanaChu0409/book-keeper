@@ -70,7 +70,7 @@ public class GetLabelEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

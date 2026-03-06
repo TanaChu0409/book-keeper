@@ -76,7 +76,7 @@ public class GetIncomeLabelsEndpoint : IEndpoint
                     PageSize = pageSize ?? 10
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

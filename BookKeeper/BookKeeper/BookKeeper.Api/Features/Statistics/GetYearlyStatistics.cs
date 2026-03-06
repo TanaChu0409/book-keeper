@@ -46,7 +46,7 @@ public static class GetYearlyStatistics
     internal sealed class Handler(
         ApplicationDbContext dbContext,
         UserContext userContext,
-        Validator validator)
+        IValidator<Query> validator)
         : IRequestHandler<Query, Result<PaginationResult<YearlyStatisticResponse>>>
     {
         public async Task<Result<PaginationResult<YearlyStatisticResponse>>> Handle(

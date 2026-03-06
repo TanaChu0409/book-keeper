@@ -81,7 +81,7 @@ public sealed class GetUserByIdEndpoint : IEndpoint
                     Id = id
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .RequireAuthorization(policy => policy.RequireRole(Roles.Admin))
         .WithTags(Tags.Users);

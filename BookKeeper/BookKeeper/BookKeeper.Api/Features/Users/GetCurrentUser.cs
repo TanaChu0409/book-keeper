@@ -1,4 +1,4 @@
-using BookKeeper.Api.Contracts.Users;
+﻿using BookKeeper.Api.Contracts.Users;
 using BookKeeper.Api.Database;
 using BookKeeper.Api.Endpoints;
 using BookKeeper.Api.Extensions;
@@ -65,7 +65,7 @@ public sealed class GetCurrentUserEndpoint : IEndpoint
         {
             Result<UserResponse> result = await sender.Send(new GetCurrentUser.Query());
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .RequireAuthorization()
         .WithTags(Tags.Users);

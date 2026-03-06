@@ -17,8 +17,8 @@ public static class GetWeeklyStatistics
 {
     public class Query : IRequest<Result<PaginationResult<WeeklyStatisticResponse>>>
     {
-        public required int Year { get; set; }
-        public required int Month { get; set; }
+        public int Year { get; set; }
+        public int Month { get; set; }
         public int? WeekOfMonth { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
@@ -56,7 +56,7 @@ public static class GetWeeklyStatistics
     internal sealed class Handler(
         ApplicationDbContext dbContext,
         UserContext userContext,
-        Validator validator)
+        IValidator<Query> validator)
         : IRequestHandler<Query, Result<PaginationResult<WeeklyStatisticResponse>>>
     {
         public async Task<Result<PaginationResult<WeeklyStatisticResponse>>> Handle(

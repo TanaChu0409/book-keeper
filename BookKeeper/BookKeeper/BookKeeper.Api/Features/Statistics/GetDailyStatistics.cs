@@ -56,7 +56,7 @@ public static class GetDailyStatistics
     internal sealed class Handler(
         ApplicationDbContext dbContext,
         UserContext userContext,
-        Validator validator)
+        IValidator<Query> validator)
         : IRequestHandler<Query, Result<PaginationResult<DailyStatisticResponse>>>
     {
         public async Task<Result<PaginationResult<DailyStatisticResponse>>> Handle(

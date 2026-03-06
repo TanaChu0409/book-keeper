@@ -207,7 +207,7 @@ public sealed class RegisterUserEndpoint : IEndpoint
                     ConfirmPassword = request.ConfirmPassword
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .AllowAnonymous()
         .WithTags(Tags.Auth);

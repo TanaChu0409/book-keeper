@@ -89,7 +89,7 @@ public class DeleteExpenditureEndpoint : IEndpoint
                     ExpenditureId = id
                 });
 
-            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, ApiResults.Problem);
         })
         .WithTags(Tags.Expenditures);
     }

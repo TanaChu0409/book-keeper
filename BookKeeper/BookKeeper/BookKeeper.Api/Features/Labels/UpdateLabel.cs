@@ -100,7 +100,7 @@ public class UpdateLabelEnpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

@@ -89,7 +89,7 @@ public class DeleteIncomeEndpoint : IEndpoint
                     IncomeId = id
                 });
 
-            return result.Match(Results.NoContent, Endpoints.ApiResults.Problem);
+            return result.Match(Results.NoContent, ApiResults.Problem);
         })
         .WithTags(Tags.Incomes);
     }

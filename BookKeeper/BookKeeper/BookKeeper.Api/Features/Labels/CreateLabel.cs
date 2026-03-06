@@ -80,7 +80,7 @@ public class CreateLabelEndpoint : IEndpoint
                     IsIncome = request.IsIncome,
                 });
 
-            return result.Match(Results.Ok, Endpoints.ApiResults.Problem);
+            return result.Match(Results.Ok, ApiResults.Problem);
         })
         .WithTags(Tags.Labels);
     }

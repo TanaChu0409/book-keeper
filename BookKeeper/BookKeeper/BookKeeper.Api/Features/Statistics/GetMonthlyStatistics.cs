@@ -48,7 +48,7 @@ public static class GetMonthlyStatistics
     internal sealed class Handler(
         ApplicationDbContext dbContext,
         UserContext userContext,
-        Validator validator)
+        IValidator<Query> validator)
         : IRequestHandler<Query, Result<PaginationResult<MonthlyStatisticResponse>>>
     {
         public async Task<Result<PaginationResult<MonthlyStatisticResponse>>> Handle(
