@@ -119,7 +119,7 @@ public class GetMonthlyStatisticsEndpoint : IEndpoint
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("api/statistics/monthly", async (int year, int month, int? page, int? pageSize, ISender sender) =>
+        app.MapGet("api/statistics/monthly", async (int year, int? month, int? page, int? pageSize, ISender sender) =>
         {
             Result<PaginationResult<MonthlyStatisticResponse>> result = await sender.Send(
                 new GetMonthlyStatistics.Query
