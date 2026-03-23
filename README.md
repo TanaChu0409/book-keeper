@@ -185,6 +185,58 @@ docker exec -it bookkeeper.database psql -U postgres -d bookkeeper
 }
 ```
 
+### Statistics（統計查詢）
+
+> 所有統計端點需要 JWT Bearer 驗證，使用者只能查詢自己的統計資料。
+
+| HTTP | 端點 | 功能 |
+|------|------|------|
+| GET | `/api/statistics/daily` | 查詢每日收支統計（支援 `date` 或 `startDate`+`endDate` 過濾） |
+| GET | `/api/statistics/weekly` | 查詢每週收支統計（必填 `year`、`month`，可選 `weekOfMonth`） |
+| GET | `/api/statistics/monthly` | 查詢每月收支統計（必填 `year`，可選 `month`） |
+| GET | `/api/statistics/yearly` | 查詢每年收支統計（可選 `year`，不填則返回所有年份） |
+
+**Query Parameters（共用）:**
+- `page` (optional, default: 1): 頁碼，需 ≥ 1
+- `pageSize` (optional, default: 10): 每頁筆數，範圍 1-100
+
+**每日統計 Query Parameters:**
+- `date` (optional): 指定日期（格式 `YYYY-MM-DD`），與 `startDate`/`endDate` 互斥
+- `startDate` (optional): 起始日期；若提供則 `endDate` 必填
+- `endDate` (optional): 結束日期；若提供則 `startDate` 必填
+
+**每週統計 Query Parameters:**
+- `year` (required): 年份（1900–2100）
+- `month` (required): 月份（1–12）
+- `weekOfMonth` (optional): 月中第幾週（1–5）
+
+**每月統計 Query Parameters:**
+- `year` (required): 年份（1900–2100）
+- `month` (optional): 月份（1–12）
+
+**每年統計 Query Parameters:**
+- `year` (optional): 年份（1900–2100），不填則返回所有年份
+
+**Response 範例** (GET `/api/statistics/daily`):
+```json
+{
+  "items": [
+    {
+      "date": "2025-12-01",
+      "totalExpendAmount": 1500.00,
+      "totalIncomeAmount": 5000.00,
+      "sumAmount": 3500.00
+    }
+  ],
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 1,
+  "totalPages": 1,
+  "hasPreviousPage": false,
+  "hasNextPage": false
+}
+```
+
 ## 錯誤處理
 專案使用 **Problem Details** 標準與自訂例外處理器（`BookKeeper.Api/Middleware`）來一致回傳驗證錯誤與內部錯誤。
 

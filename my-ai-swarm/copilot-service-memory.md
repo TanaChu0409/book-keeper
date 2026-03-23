@@ -509,6 +509,34 @@ DateTimeProvider
 
 ## 📊 Statistics (統計功能)
 
+### Query Endpoints 清單
+
+| HTTP | 端點 | Handler | 說明 |
+|------|------|---------|------|
+| GET | `/api/statistics/daily` | `GetDailyStatistics.Handler` | 查詢每日收支統計（支援 `date` 或 `startDate`+`endDate` 過濾，需 JWT 驗證） |
+| GET | `/api/statistics/weekly` | `GetWeeklyStatistics.Handler` | 查詢每週收支統計（必填 `year`、`month`，可選 `weekOfMonth`，需 JWT 驗證） |
+| GET | `/api/statistics/monthly` | `GetMonthlyStatistics.Handler` | 查詢每月收支統計（必填 `year`，可選 `month`，需 JWT 驗證） |
+| GET | `/api/statistics/yearly` | `GetYearlyStatistics.Handler` | 查詢每年收支統計（可選 `year`，需 JWT 驗證） |
+
+### Query Endpoints 檔案結構
+
+```
+Features/Statistics/
+├── GetDailyStatistics.cs    # 每日統計查詢 (Query + Validator + Handler + Endpoint)
+├── GetWeeklyStatistics.cs   # 每週統計查詢 (Query + Validator + Handler + Endpoint)
+├── GetMonthlyStatistics.cs  # 每月統計查詢 (Query + Validator + Handler + Endpoint)
+└── GetYearlyStatistics.cs   # 每年統計查詢 (Query + Validator + Handler + Endpoint)
+```
+
+### Response Contracts 清單
+
+| Contract | 檔案位置 | 欄位 |
+|----------|---------|------|
+| `DailyStatisticResponse` | `Contracts/Statistics/DailyStatisticResponse.cs` | `Date`, `TotalExpendAmount`, `TotalIncomeAmount`, `SumAmount` |
+| `WeeklyStatisticResponse` | `Contracts/Statistics/WeeklyStatisticResponse.cs` | `Year`, `Month`, `WeekOfMonth`, `TotalExpendAmount`, `TotalIncomeAmount`, `SumAmount` |
+| `MonthlyStatisticResponse` | `Contracts/Statistics/MonthlyStatisticResponse.cs` | `Year`, `Month`, `TotalExpendAmount`, `TotalIncomeAmount`, `SumAmount` |
+| `YearlyStatisticResponse` | `Contracts/Statistics/YearlyStatisticResponse.cs` | `Year`, `TotalExpendAmount`, `TotalIncomeAmount`, `SumAmount` |
+
 ### Background Jobs 清單
 
 | Job | 排程 (Taiwan Time) | Handler | 用途 |
@@ -518,10 +546,14 @@ DateTimeProvider
 | **ProcessStatisticOfMonth** | 每月 1 日 03:00 | `CreateStatisticOfMonth.ProcessStatisticOfMonth` | 統計每位用戶上個月的總收入與總支出，寫入 `StatisticsOfMonths` 表 |
 | **ProcessStatisticOfYear** | 每年 1 月 1 日 03:00 | `CreateStatisticOfYear.ProcessStatisticOfYear` | 統計每位用戶上年度的總收入與總支出，寫入 `StatisticsOfYears` 表 |
 
-### 檔案結構
+### 完整檔案結構
 
 ```
 Features/Statistics/
+├── GetDailyStatistics.cs      # 每日統計查詢 (Query + Validator + Handler + Endpoint)
+├── GetWeeklyStatistics.cs     # 每週統計查詢 (Query + Validator + Handler + Endpoint)
+├── GetMonthlyStatistics.cs    # 每月統計查詢 (Query + Validator + Handler + Endpoint)
+├── GetYearlyStatistics.cs     # 每年統計查詢 (Query + Validator + Handler + Endpoint)
 ├── CreateStatisticOfDate.cs   # 每日統計 Job (每日 03:00 執行)
 ├── CreateStatisticOfWeek.cs   # 每週統計 Job (每週一 03:00 執行)
 ├── CreateStatisticOfMonth.cs  # 每月統計 Job (每月 1 日 03:00 執行)
