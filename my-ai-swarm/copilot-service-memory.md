@@ -1,6 +1,6 @@
 # BookKeeper - Service Memory (服務清單)
 
-> **版本**: v1.4.0 | **最後更新**: 2026-01-30 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
+> **版本**: v1.5.0 | **最後更新**: 2026-03-23 | **用途**: 記錄所有 Features、Endpoints、Handlers 映射關係
 
 ---
 
@@ -509,6 +509,15 @@ DateTimeProvider
 
 ## 📊 Statistics (統計功能)
 
+### GET API Endpoints 清單
+
+| Feature | HTTP | 端點 | Handler | 用途 |
+|---------|------|------|---------|------|
+| **GetDailyStatistics** | GET | `/api/statistics/daily` | `GetDailyStatistics.Handler` | 分頁查詢每日收支統計，支援指定日期或日期範圍過濾 |
+| **GetWeeklyStatistics** | GET | `/api/statistics/weekly` | `GetWeeklyStatistics.Handler` | 分頁查詢每週收支統計，需傳入 year 與 month，可選 weekOfMonth |
+| **GetMonthlyStatistics** | GET | `/api/statistics/monthly` | `GetMonthlyStatistics.Handler` | 分頁查詢每月收支統計，需傳入 year，可選 month |
+| **GetYearlyStatistics** | GET | `/api/statistics/yearly` | `GetYearlyStatistics.Handler` | 分頁查詢每年收支統計，可選 year（不傳則返回所有年份） |
+
 ### Background Jobs 清單
 
 | Job | 排程 (Taiwan Time) | Handler | 用途 |
@@ -522,10 +531,20 @@ DateTimeProvider
 
 ```
 Features/Statistics/
+├── GetDailyStatistics.cs      # GET 每日統計查詢（含 Validator + Handler + Endpoint）
+├── GetWeeklyStatistics.cs     # GET 每週統計查詢
+├── GetMonthlyStatistics.cs    # GET 每月統計查詢
+├── GetYearlyStatistics.cs     # GET 每年統計查詢
 ├── CreateStatisticOfDate.cs   # 每日統計 Job (每日 03:00 執行)
 ├── CreateStatisticOfWeek.cs   # 每週統計 Job (每週一 03:00 執行)
 ├── CreateStatisticOfMonth.cs  # 每月統計 Job (每月 1 日 03:00 執行)
 └── CreateStatisticOfYear.cs   # 每年統計 Job (每年 1 月 1 日 03:00 執行)
+
+Contracts/Statistics/
+├── DailyStatisticResponse.cs
+├── WeeklyStatisticResponse.cs
+├── MonthlyStatisticResponse.cs
+└── YearlyStatisticResponse.cs
 ```
 
 ### Job 詳細規格
@@ -613,6 +632,10 @@ Features/Statistics/
 | **UpdateIncome** | `UpdateIncome.Validator` | 同上 |
 | **CreateExpenditure** | `CreateExpenditure.Validator` | PaymentName 非空、Amount > 0、LabelId 非空 |
 | **UpdateExpenditure** | `UpdateExpenditure.Validator` | 同上 |
+| **GetDailyStatistics** | `GetDailyStatistics.Validator` | Date/StartDate/EndDate 互斥驗證、分頁參數範圍 |
+| **GetWeeklyStatistics** | `GetWeeklyStatistics.Validator` | Year 範圍 (1900-2100)、Month 範圍 (1-12)、WeekOfMonth 範圍 (1-5)、分頁參數範圍 |
+| **GetMonthlyStatistics** | `GetMonthlyStatistics.Validator` | Year 範圍 (1900-2100)、Month 範圍 (1-12)、分頁參數範圍 |
+| **GetYearlyStatistics** | `GetYearlyStatistics.Validator` | Year 範圍 (1900-2100)、分頁參數範圍 |
 
 ### 驗證規則範例
 
@@ -645,6 +668,7 @@ public class Validator : AbstractValidator<Command>
 | v1.2.0 | 2026-01-12 | 新增 Users 區塊，列出 GetCurrentUser / GetUserById 端點 (Admin 限制) |
 | v1.3.0 | 2026-01-28 | 新增 Statistics 區塊（StatisticOfDate、StatisticOfMonth）|
 | v1.4.0 | 2026-01-30 | 補齊 Statistics 四維度（新增 StatisticOfWeek、StatisticOfYear），修正編碼問題 |
+| v1.5.0 | 2026-03-23 | 新增 Statistics GET API 端點清單（GetDailyStatistics、GetWeeklyStatistics、GetMonthlyStatistics、GetYearlyStatistics）及對應 Validators |
 
 ---
 

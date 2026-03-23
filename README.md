@@ -185,6 +185,64 @@ docker exec -it bookkeeper.database psql -U postgres -d bookkeeper
 }
 ```
 
+### Statistics（統計查詢）
+| HTTP | 端點 | 功能 |
+|------|------|------|
+| GET | `/api/statistics/daily` | 分頁查詢每日收支統計 |
+| GET | `/api/statistics/weekly` | 分頁查詢每週收支統計 |
+| GET | `/api/statistics/monthly` | 分頁查詢每月收支統計 |
+| GET | `/api/statistics/yearly` | 分頁查詢每年收支統計 |
+
+**Query Parameters:**
+
+`GET /api/statistics/daily`
+- `date` (optional): 指定日期 (格式: `YYYY-MM-DD`)
+- `startDate` (optional): 起始日期 (格式: `YYYY-MM-DD`)
+- `endDate` (optional): 結束日期 (格式: `YYYY-MM-DD`)
+- `page` (optional, default: 1): 頁碼
+- `pageSize` (optional, default: 10): 每頁筆數
+
+`GET /api/statistics/weekly`
+- `year` (required): 年份
+- `month` (required): 月份 (1-12)
+- `weekOfMonth` (optional): 月份中的第幾週 (1-5)
+- `page` / `pageSize` (optional)
+
+`GET /api/statistics/monthly`
+- `year` (required): 年份
+- `month` (optional): 月份 (1-12)
+- `page` / `pageSize` (optional)
+
+`GET /api/statistics/yearly`
+- `year` (optional): 指定年份（若未提供則返回所有年份）
+- `page` / `pageSize` (optional)
+
+**Response 範例** (每日統計):
+```json
+{
+  "items": [
+    {
+      "date": "2025-12-01",
+      "totalExpendAmount": 1500.00,
+      "totalIncomeAmount": 5000.00,
+      "sumAmount": 3500.00
+    }
+  ],
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 1,
+  "totalPages": 1,
+  "hasPreviousPage": false,
+  "hasNextPage": false
+}
+```
+
+**說明**:
+- 所有統計端點均需登入（JWT Bearer）。
+- 使用者只能查詢自己的統計資料。
+- 統計資料由 Quartz 背景排程自動產生（每日/每週/每月/每年凌晨 3:00 台灣時間）。
+- 查詢無資料時返回空陣列（非錯誤）。
+
 ## 錯誤處理
 專案使用 **Problem Details** 標準與自訂例外處理器（`BookKeeper.Api/Middleware`）來一致回傳驗證錯誤與內部錯誤。
 

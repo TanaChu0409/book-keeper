@@ -1,6 +1,6 @@
 # BookKeeper - Project Memory
 
-> **版本**: v1.5.0 | **最後更新**: 2026-01-30 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
+> **版本**: v1.6.0 | **最後更新**: 2026-03-23 | **專案**: BookKeeper Personal Finance API | **狀態**: ✅ Active Development
 
 ---
 
@@ -79,6 +79,7 @@
 |------|----|----|------|---------|
 | 2026-01-06 | #001 | 採用 Vertical Slice Architecture | 功能隔離、易於導航、減少跨層耦合、符合現代 .NET 最佳實踐 | 全專案結構 `/Features/` |
 | 2026-01-06 | #002 | Result Pattern 取代 Exception | 明確錯誤處理、更好的控制流、強制調用方處理錯誤 | `/Shared/Result.cs` + 所有 Handler |
+| 2026-03-23 | #015 | 新增 Statistics 四維度 GET API 端點 | 讓前端應用程式能展示使用者的財務統計分析（每日/每週/每月/每年），使用 PaginationResult + JWT 驗證確保使用者只能查詢自己的統計資料 | `Features/Statistics/Get*.cs` + `Contracts/Statistics/` |
 | 2026-01-06 | #003 | ULID 作為主鍵 | 時間排序、URL 安全、分散式友好、優於 GUID | 所有 Entity + `l_`/`i_`/`e_` 前綴 |
 | 2026-01-06 | #004 | 自動端點發現機制 | 減少樣板代碼、基於 `IEndpoint` 約定、Reflection 自動註冊 | `DependencyInjection.cs` |
 | 2026-01-06 | #005 | Entity Factory Pattern | 封裝創建邏輯、確保不變性、私有建構函式 | 所有 Entity (`Label`/`Income`/`Expenditure`) |
@@ -603,6 +604,7 @@ SELECT * FROM expenditures;
 |------|------|---------|--------|
 | v1.0.0 | 2026-01-06 | 初始版本建立，記錄核心架構決策 | AI Architect |
 | v1.1.0 | 2026-01-08 | 重建記憶系統，符合 copilot-instructions.md 標準，新增完整命名約定與檢查清單 | GitHub Copilot |
+| v1.6.0 | 2026-03-23 | 新增決策 #015：Statistics 四維度 GET API 端點（每日/每週/每月/每年統計查詢） | GitHub Copilot |
 
 ---
 
